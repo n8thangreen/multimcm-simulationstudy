@@ -3,6 +3,8 @@
 
 library(multimcm)
 library(dplyr)
+library(survival)
+library(purrr)
 library(glue)
 
 # read in scenario data
@@ -27,93 +29,40 @@ for (i in 1:run$n_endpoints) {
 }
 
 
-  
-  
+dat <- data.frame(times = rexp(n = 1000,1),
+                  status = 1,
+                  group = 1)
+
+fit <- survfit(Surv(times, status) ~ group, data = dat)
+plot(fit)
+
 
 ##TODO
 # from previous analysis
 # use this?
   
   
-s_tx_groups <- table(surv_input_data$TRTA)
-mu0 <- -2
-OSage_NIVO <- surv_input_data$OSage[surv_input_data$TRTA == "NIVOLUMAB"]
-
-fake_nivo_pfs <-
-  rsurv_mix(cf = 0.45,
-            n = s_tx_groups["NIVOLUMAB"],
-            distn = c("exp", "exp"),
-            prop_cens = 0.2,
-            params =
-              list(
-                list(
-                  mu = c(mu0, 0.005)),
-                list(
-                  mu = c(-8.5, 0.05))),
-            X = OSage_NIVO)
-
-# centered for joint model
-surv_input_fake <-
-  surv_input_data %>%
-  mutate(pfs = ifelse(TRTA == "NIVOLUMAB",
-                      fake_nivo_pfs$t_cens, pfs),
-         pfs_event = ifelse(TRTA == "NIVOLUMAB",
-                            fake_nivo_pfs$status, pfs_event)) %>%
-  group_by(TRTA) %>%
-  mutate(pfs_centred = pfs - 1/exp(mu0))
-
-X_nivo <-
-  data.frame(
-    OSage = OSage_NIVO,
-    t_pfs = surv_input_fake$pfs_centred[surv_input_fake$TRTA == "NIVOLUMAB"])
-
-fake_nivo_os <-
-  rsurv_mix(cf = 0.2,
-            n = s_tx_groups["NIVOLUMAB"],
-            distn = c("exp", "exp"),
-            prop_cens = 0.2,
-            params =
-              list(
-                list(
-                  mu = c(-3, 0.005, -0.001)),
-                list(
-                  mu = c(-8.5, 0.03, 0))),
-            X = X_nivo)
-
-# replace with fake data
-surv_input_fake$os[surv_input_fake$TRTA == "NIVOLUMAB"] <- fake_nivo_os$t_cens
-surv_input_fake$os_event[surv_input_fake$TRTA == "NIVOLUMAB"] <- fake_nivo_os$status
+input_data <-
+  rsurv_mix(n = nsample,
+            n_endpoints = n_endpoints,
+            t_cutpoint = t_cutpoint,
+            mu_cf = mu_cf,
+            sigma_cf = sigma_true,
+            distn = family_latent_true,
+            prop_cens = prop_censoring,
+            params = latent_params_true)
 
 
-## plots
+########
+# plots
 # check Kaplan-Meier
 
-library(survival)
 fit_pfs <- survfit(Surv(fake_nivo_pfs$t_cens, fake_nivo_pfs$status) ~ fake_nivo_pfs$group)
 fit_mix <- survfit(Surv(fake_nivo_pfs$t_cens, fake_nivo_pfs$status) ~  1)
+
 plot(fit_pfs, xlim = c(0, 60))
 lines(fit_mix, col = "blue")
 
-fit_os <- survfit(Surv(fake_nivo_os$t_cens, fake_nivo_os$status) ~ fake_nivo_os$group)
-fit_mix <- survfit(Surv(fake_nivo_os$t_cens, fake_nivo_os$status) ~  1)
-plot(fit_os, xlim = c(0, 60))
-lines(fit_mix, col = "blue")
-
-
-
-
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
