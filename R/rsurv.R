@@ -12,11 +12,17 @@ rsurv <- function(n = 100,
                   distn = "exp",
                   prop_cens = 0.1,
                   params = list(rate = 1)) {
-  times <-
+  ##TODO: replace below  
+  # rdistn <- glue("r{run$family_latent_true}")
+  # latent_params_true <- eval(parse(text = run$latent_params_true))
+  # rargs <- c(params, n = n)
+  # times <- do.call(rdistn, rargs)
+  
+  t_latent <-
     if (distn == "exp") {
-      rexp(n, params$rate)
+      do.call(rexp, c(n = n, params))
     } else if (distn == "weibull") {
-      rweibull(n, params$alpha, params$mu)
+      do.call(rweibull, c(n = n, params))
     } else if (distn == "biweibull") {
       do.call(rbiweibull, c(n = n, params))
     }
@@ -26,14 +32,14 @@ rsurv <- function(n = 100,
                      size = n*prop_cens,
                      replace = FALSE)
   
-  t_cens <- times
-  t_cens[cens_idx] <-
-    map_dbl(t_cens[cens_idx], function(x) runif(1, 0, x))
+  times <- t_latent
+  times[cens_idx] <-
+    map_dbl(times[cens_idx], function(x) runif(1, 0, x))
   
   status <- as.numeric(!(1:n) %in% cens_idx)
   
-  data.frame(times = times,
-             t_cens = t_cens,
+  data.frame(t_latent = t_latent,
+             times = times,
              status = status)
 }
 
@@ -59,11 +65,11 @@ rsurv_mix <- function(nsample = 20,
          call. = FALSE)
   
   # hierarchically sample cure fraction
-  cf <- rnorm(n = n_endpoints, mu_cf, sd = sigma_cf)
-  
-  # just assume the same for all endpoints to start with 
-  curestatus <- rbinom(nsample, size = 1, prob = mu_cf) + 1  # cure group indicator
-  ncf <- c(sum(curestatus == 1), sum(curestatus == 2))       # group sizes
+  cf_lin <- rnorm(n = n_endpoints, mu_cf, sd = sigma_cf)
+  cf <- exp(cf_lin)/(1 + exp(cf_lin))
+    
+  # # just assume the same for all endpoints to start with 
+  # curestatus <- rbinom(nsample, size = 1, prob = mu_cf) + 1  # cure group indicator
   
   res <- list()
   
@@ -76,33 +82,25 @@ rsurv_mix <- function(nsample = 20,
             distn = distn,
             prop_cens = prop_cens)
     
-    # # hierarchically sample cure status
-    # curestatus <- rbinom(nsample, size = 1, prob = cf) + 1  # cure group indicator
+    # hierarchically sample cure status
+    curestatus <- rbinom(nsample, size = 1, prob = cf[i]) + 1  # cure group indicator
     
     # modify times
     res[[i]] <- res[[i]] |> 
       mutate(curestatus = curestatus,
              # cured
+             t_latent = ifelse(curestatus == 2 & status == 1,
+                            yes = t_cutpoint, no = t_latent),
              times = ifelse(curestatus == 2 & status == 1,
-                            yes = t_cutpoint, no = times),
-             t_cens = ifelse(curestatus == 2 & status == 1,
-                             yes = t_cutpoint, no = t_cens),
+                             yes = t_cutpoint, no = times),
              # after cut-point
-             status = ifelse(t_cens > t_cutpoint,
+             status = ifelse(times > t_cutpoint,
                              yes = 0, no = status),
-             t_cens = ifelse(t_cens > t_cutpoint,
-                             yes = t_cutpoint, no = t_cens)
-      )
+             times = ifelse(times > t_cutpoint,
+                             yes = t_cutpoint, no = times),
+             endpoint = i)
   }
   
-  ##TODO
-  # what format to return?
-  out <- purrr::transpose(res)
-  
-  list(
-    times = unlist(out$times),
-    t_cens = unlist(out$t_cens),
-    status = unlist(out$status),
-    curestatus = unlist(out$curestatus))
+  do.call(rbind, res)
 }
 
