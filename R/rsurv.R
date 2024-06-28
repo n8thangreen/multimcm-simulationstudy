@@ -88,17 +88,20 @@ rsurv_mix <- function(nsample = 20,
     # modify times
     res[[i]] <- res[[i]] |> 
       mutate(curestatus = curestatus,
+             cure_obs = curestatus == 2 & status == 1,
+             after_cut = times > t_cutpoint,
              # cured
-             t_latent = ifelse(curestatus == 2 & status == 1,
-                            yes = t_cutpoint, no = t_latent),
-             times = ifelse(curestatus == 2 & status == 1,
-                             yes = t_cutpoint, no = times),
+             t_latent = ifelse(cure_obs,
+                               yes = t_cutpoint, no = t_latent),
+             times = ifelse(cure_obs,
+                            yes = t_cutpoint, no = times),
              # after cut-point
-             status = ifelse(times > t_cutpoint,
+             status = ifelse(after_cut,
                              yes = 0, no = status),
-             times = ifelse(times > t_cutpoint,
-                             yes = t_cutpoint, no = times),
-             endpoint = i)
+             times = ifelse(after_cut,
+                            yes = t_cutpoint, no = times),
+             endpoint = i) |> 
+      select(-cure_obs, -after_cut)
   }
   
   do.call(rbind, res)
