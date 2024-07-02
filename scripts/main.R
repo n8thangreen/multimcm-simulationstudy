@@ -83,7 +83,9 @@ for (i in seq_along(input_data)) {
 
 ############
 # fit model
-i <- 3
+stan_out <- list()
+
+i <- 2
 params <- scenario_data[i, ]
 input_dat <- mutate(input_data[[i]],
                     tx = 1,
@@ -96,18 +98,20 @@ input_dat <- rbind(input_dat,
                           tx = 2,
                           rate = 10^(-10)))
 
+# duplicate for each treatment
+prior_cure <- list(mu_alpha = rep(params$mu_cf_prior, 2),
+                   sigma_alpha = rep(params$sigma_cf_prior, 2),
+                   mu_sd_cf = rep(params$mu_sd_cf_prior, 2),
+                   sigma_sd_cf = rep(params$sigma_sd_cf_prior, 2))
 
-out <-
+stan_out[[i]] <-
   bmcm_stan(
     input_data = input_dat,
     formula = "Surv(time=times, event=status) ~ 1",
     cureformula = "~ tx + (1 | endpoint)",
     family_latent = params$family_latent_model,
-    # prior_latent = NA,
-    prior_cure = list(mu_alpha = rep(params$mu_cf_prior, 2),
-                      sigma_alpha = rep(params$sigma_cf_prior, 2),
-                      mu_sd_cf = rep(params$mu_sd_cf_prior, 2),
-                      sigma_sd_cf = rep(params$sigma_sd_cf_prior, 2)),
+    # prior_latent = NA,   ##TODO: how are these used by the Stan code?
+    prior_cure = prior_cure,
     centre_coefs = TRUE,
     bg_model = "bg_fixed",
     bg_varname = "rate",
@@ -116,9 +120,26 @@ out <-
     save_stan_code = TRUE)
 
 # plot
-plot_S_joint(out, add_km = TRUE) + xlim(0,5)
+plot_S_joint(stan_out[[i]], add_km = TRUE) + xlim(0,5)
 
+save(stan_out, file = "data/stan+out.RData")
 
 #####################
 # summary statistics
+
+# see
+# Using simulation studies to evaluate statistical methods (2017) Tim Morris et al, Stats in Medicine
+
+# targets:
+# * RMST
+#   * separate curves
+#   * global curve
+# 
+# * cure fraction
+
+# performance statistics:
+# * bias
+# * empirical SE
+# * coverage
+# * MSE
 
