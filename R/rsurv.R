@@ -51,7 +51,7 @@ rsurv <- function(n = 100,
 rsurv_mix <- function(nsample = 20,
                       n_endpoints = 2,
                       t_cutpoint,
-                      mu_cf = 0.2,
+                      mu_cf = 0.2,  # logit scale
                       sigma_cf,
                       distn = "exp",
                       prop_cens = 0,
@@ -60,10 +60,11 @@ rsurv_mix <- function(nsample = 20,
                           list(rate = 1),
                           list(rate = 1))) {
   
-  if (length(params) != n_endpoints)
+  if (length(params) == 1) {
+    params <- rep(list(latent_params_true[[1]]), n_endpoints)
+  } else if (length(params) != n_endpoints) {
     stop("Number of parameter sets and distributions don't match",
-         call. = FALSE)
-  
+         call. = FALSE)}
   # hierarchically sample cure fraction
   cf_lin <- rnorm(n = n_endpoints, mu_cf, sd = sigma_cf)
   cf <- exp(cf_lin)/(1 + exp(cf_lin))
@@ -92,9 +93,11 @@ rsurv_mix <- function(nsample = 20,
              after_cut = times > t_cutpoint,
              # cured
              t_latent = ifelse(cure_obs,
-                               yes = t_cutpoint, no = t_latent),
+                               yes = NA, no = t_latent),
              times = ifelse(cure_obs,
                             yes = t_cutpoint, no = times),
+             status = ifelse(cure_obs,
+                             yes = 0, no = status),
              # after cut-point
              status = ifelse(after_cut,
                              yes = 0, no = status),
@@ -103,7 +106,6 @@ rsurv_mix <- function(nsample = 20,
              endpoint = i) |> 
       select(-cure_obs, -after_cut)
   }
-  
   do.call(rbind, res)
 }
 
