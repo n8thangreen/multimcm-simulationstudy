@@ -122,24 +122,8 @@ stan_out[[i]] <-
 # plot
 plot_S_joint(stan_out[[i]], add_km = TRUE) + xlim(0,5)
 
-save(stan_out, file = "data/stan+out.RData")
+save(stan_out, file = "data/stan_out.RData")
 
-#####################
-# summary statistics
 
-# see
-# Using simulation studies to evaluate statistical methods (2017) Tim Morris et al, Stats in Medicine
 
-# targets:
-# * RMST
-#   * separate curves
-#   * global curve
-# 
-# * cure fraction
-
-# performance statistics:
-# * bias
-# * empirical SE
-# * coverage
-# * MSE
 
