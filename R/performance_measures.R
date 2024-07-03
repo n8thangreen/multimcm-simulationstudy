@@ -3,7 +3,7 @@
 performance_measures <- function(fit, par_nm, true_value) {
   
   # Extract posterior samples
-  samples <- extract(fit, pars = par_nm)$param
+  samples <- rstan::extract(fit, pars = par_nm)$param
   
   bias <- mean(samples) - true_value
   empirical_se <- sd(samples)

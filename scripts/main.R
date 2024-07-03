@@ -11,6 +11,7 @@ library(ggplot2)
 # read in scenario data
 scenario_data <- read.csv(here::here("raw-data/scenarios.csv")) |> as_tibble()
 
+##################
 # data generation
 
 # # elicit latent survival curves
@@ -47,8 +48,6 @@ for (i in 1:16) {
               params = latent_params_true)
 }
 
-########
-# plots
 # check Kaplan-Meier
 
 # # single plots
@@ -80,9 +79,9 @@ for (i in seq_along(input_data)) {
 }
 
 
-
 ############
 # fit model
+
 stan_out <- list()
 
 i <- 2
@@ -119,11 +118,11 @@ stan_out[[i]] <-
     t_max = 5,
     save_stan_code = TRUE)
 
+#######
 # plot
+
 plot_S_joint(stan_out[[i]], add_km = TRUE) + xlim(0,5)
 
 save(stan_out, file = "data/stan_out.RData")
-
-
 
 

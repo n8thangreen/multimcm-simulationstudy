@@ -19,7 +19,16 @@ library(rstan)
 load("data/stan_out.RData")
 
 
+for (i in seq_along(stan_out)) {
+  fit <- stan_out[[i]]
+  pm[[i]] <- performance_measures(fit, par_nm, true_value)
+}
 
 
+save(pm, file = "data/performance_measures.RData")
+
+
+########
+# plots
 
 
