@@ -53,6 +53,7 @@ rsurv_mix <- function(nsample = 20,
                       t_cutpoint,
                       mu_cf = 0.2,  # logit scale
                       sigma_cf,
+                      cf_sample_method = "random",
                       distn = "exp",
                       prop_cens = 0,
                       params =
@@ -60,14 +61,23 @@ rsurv_mix <- function(nsample = 20,
                           list(rate = 1),
                           list(rate = 1))) {
   
-  if (length(params) == 1) {
-    params <- rep(list(latent_params_true[[1]]), n_endpoints)
-  } else if (length(params) != n_endpoints) {
-    stop("Number of parameter sets and distributions don't match",
+  if (length(params) < n_endpoints) {
+    params <- rep(params, length.out = n_endpoints)
+    message("recycling parameter values in end-point distributions")
+  } else if (length(params) > n_endpoints) {
+    stop("Number of parameter sets bigger than number of end-point distributions",
          call. = FALSE)}
-  # hierarchically sample cure fraction
-  cf_lin <- rnorm(n = n_endpoints, mu_cf, sd = sigma_cf)
-  cf <- exp(cf_lin)/(1 + exp(cf_lin))
+  
+  if (cf_sample_method == "random") {
+    # hierarchically sample cure fraction
+    cf_lin <- rnorm(n = n_endpoints, mu_cf, sd = sigma_cf)
+    cf <- exp(cf_lin)/(1 + exp(cf_lin))
+  } else if (cf_sample_method == "quantiles") {
+    # generate evenly spaced probabilities
+    probs <- seq(0, 1, length.out = n_endpoints + 2)[-c(1, n_endpoints + 2)]
+    cf_lin <- qnorm(p = probs, mean = mu_cf, sd = sigma_cf)
+    cf <- exp(cf_lin)/(1 + exp(cf_lin))
+  }
     
   # # just assume the same for all endpoints to start with 
   # curestatus <- rbinom(nsample, size = 1, prob = mu_cf) + 1  # cure group indicator
@@ -84,8 +94,14 @@ rsurv_mix <- function(nsample = 20,
             prop_cens = prop_cens)
     
     # hierarchically sample cure status
-    curestatus <- rbinom(nsample, size = 1, prob = cf[i]) + 1  # cure group indicator
+    # curestatus <- rbinom(nsample, size = 1, prob = cf[i]) + 1  # random sampled
     
+    # deterministic fixed sizes
+    num_cf <- round(nsample * cf[i])
+    cured_idx <- sample(1:nsample, size = num_cf, replace = FALSE)
+    curestatus <- rep(1, nsample)
+    curestatus[cured_idx] <- 2
+      
     # modify times
     res[[i]] <- res[[i]] |> 
       mutate(curestatus = curestatus,

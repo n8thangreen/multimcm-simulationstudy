@@ -22,10 +22,11 @@ scenario_data <- read.csv(here::here("raw-data/scenarios.csv")) |> as_tibble()
 # plot(fit)
 
 # # elicit sd of cure fraction prior
-# 
-# sigma_cf <- 1     # uninformative 
+# # on the logistic scale
+#
+# sigma_cf <- 1     # uninformative
 # sigma_cf <- 0.2   # informative
-# alpha <- rnorm(n = 10000, -1.39, sigma_cf)
+# alpha <- rnorm(n = 10000, mean = -1.39, sigma_cf)
 # 
 # hist(exp(alpha)/(1 + exp(alpha)), breaks = 50, xlim = c(0,1))
 
@@ -43,6 +44,7 @@ for (i in 1:16) {
               t_cutpoint = data$t_cutpoint,
               mu_cf = data$cf_true,
               sigma_cf = data$sigma_true,
+              cf_sample_method = "quantiles",
               distn = data$family_latent_true,
               prop_cens = data$prop_censoring,
               params = latent_params_true)
@@ -50,11 +52,11 @@ for (i in 1:16) {
 
 # check Kaplan-Meier
 
-# # single plots
-# fit_dat <- survfit(Surv(times, status) ~ endpoint, data = input_data)
-# 
-# plot(fit_dat, col = rgb(0,0,0, alpha = 0.1))
-# abline(h = exp(-1.39)/(1 + exp(-1.39)), col = "red")
+# single plots
+fit_dat <- survfit(Surv(times, status) ~ endpoint, data = input_data[[1]])
+
+plot(fit_dat, col = rgb(0,0,0, alpha = 0.1))
+abline(h = exp(-1.39)/(1 + exp(-1.39)), col = "red")
 
 
 # grid of plots
