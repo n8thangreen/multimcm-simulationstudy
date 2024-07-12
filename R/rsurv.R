@@ -3,10 +3,10 @@
 #'
 #' @examples
 #'
-# rsurv(n = 100,
-#       distn = "exp",
-#       prop_cens = 0.1,
-#       params = list(rate = 1))
+#' rsurv(n = 100,
+#'       distn = "exp",
+#'       prop_cens = 0.1,
+#'       params = list(rate = 1))
 #'
 rsurv <- function(n = 100,
                   distn = "exp",
