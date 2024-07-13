@@ -50,6 +50,12 @@ for (i in 1:16) {
               params = latent_params_true)
 }
 
+save(input_data, file = "data/input_data.RData")
+
+
+########
+# plots
+
 # check Kaplan-Meier
 
 # single plots
@@ -86,13 +92,14 @@ for (i in seq_along(input_data)) {
 
 stan_out <- list()
 
-i <- 2
+i <- 1
 params <- scenario_data[i, ]
 input_dat <- mutate(input_data[[i]],
-                    tx = 1,
+                    tx = 1,           # only a single treatment
                     rate = 10^(-10))  # background hazard
 
 ##TODO; errors with single treatment only
+##      fix in bmcm_stan()
 ## quick fix by duplicating inputs
 input_dat <- rbind(input_dat,
                    mutate(input_data[[i]],

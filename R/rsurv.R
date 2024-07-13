@@ -83,6 +83,7 @@ rsurv_mix <- function(nsample = 20,
   # curestatus <- rbinom(nsample, size = 1, prob = mu_cf) + 1  # cure group indicator
   
   res <- list()
+  median_times <- vector(length = n_endpoints)
   
   # sample times for each endpoint
   for (i in seq_len(n_endpoints)) {
@@ -93,10 +94,13 @@ rsurv_mix <- function(nsample = 20,
             distn = distn,
             prop_cens = prop_cens)
     
+    median_fn <- glue("{distn}_median")
+    median_times[i] <- do.call(median_fn, params[[i]])
+    
     # hierarchically sample cure status
     # curestatus <- rbinom(nsample, size = 1, prob = cf[i]) + 1  # random sampled
     
-    # deterministic fixed sizes
+    # deterministic fixed size of cured
     num_cf <- round(nsample * cf[i])
     cured_idx <- sample(1:nsample, size = num_cf, replace = FALSE)
     curestatus <- rep(1, nsample)
@@ -122,6 +126,11 @@ rsurv_mix <- function(nsample = 20,
              endpoint = i) |> 
       select(-cure_obs, -after_cut)
   }
-  do.call(rbind, res)
+  
+  structure(
+    do.call(rbind, res),
+    # rmst = rmst,  ##TODO
+    median = median_times,
+    cf = cf)
 }
 
