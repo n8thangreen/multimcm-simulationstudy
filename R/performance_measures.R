@@ -41,7 +41,8 @@ lognormal_median <- function(mu, sigma) {
 bmcm_performance_measures <- function(fit, par_nm, true_vals) {
   
   res <- list()
-  n_endpoints <- fit$formula$cure$cf_idx
+  #n_endpoints <- fit$formula$cure$cf_idx
+  n_endpoints <- length(true_vals)
   
   for (i in seq_len(n_endpoints)) {
     par_nm_ <- paste0(par_nm, "_", i)
