@@ -92,40 +92,44 @@ for (i in seq_along(input_data)) {
 
 stan_out <- list()
 
-i <- 1
-params <- scenario_data[i, ]
-input_dat <- mutate(input_data[[i]],
-                    tx = 1,           # only a single treatment
-                    rate = 10^(-10))  # background hazard
+# i <- 1
 
-##TODO; errors with single treatment only
-##      fix in bmcm_stan()
-## quick fix by duplicating inputs
-input_dat <- rbind(input_dat,
-                   mutate(input_data[[i]],
-                          tx = 2,
-                          rate = 10^(-10)))
-
-# duplicate for each treatment
-prior_cure <- list(mu_alpha = rep(params$mu_cf_prior, 2),
-                   sigma_alpha = rep(params$sigma_cf_prior, 2),
-                   mu_sd_cf = rep(params$mu_sd_cf_prior, 2),
-                   sigma_sd_cf = rep(params$sigma_sd_cf_prior, 2))
-
-stan_out[[i]] <-
-  bmcm_stan(
-    input_data = input_dat,
-    formula = "Surv(time=times, event=status) ~ 1",
-    cureformula = "~ tx + (1 | endpoint)",
-    family_latent = params$family_latent_model,
-    # prior_latent = NA,   ##TODO: how are these used by the Stan code?
-    prior_cure = prior_cure,
-    centre_coefs = TRUE,
-    bg_model = "bg_fixed",
-    bg_varname = "rate",
-    bg_hr = 1,
-    t_max = 5,
-    save_stan_code = TRUE)
+for (i in 1:nrow(scenario_data)) {
+  
+  params <- scenario_data[i, ]
+  input_dat <- mutate(input_data[[i]],
+                      tx = 1,           # only a single treatment
+                      rate = 10^(-10))  # background hazard
+  
+  ##TODO; errors with single treatment only
+  ##      fix in bmcm_stan()
+  ## quick fix by duplicating inputs
+  input_dat <- rbind(input_dat,
+                     mutate(input_data[[i]],
+                            tx = 2,
+                            rate = 10^(-100)))
+  
+  # duplicate for each treatment
+  prior_cure <- list(mu_alpha = rep(params$mu_cf_prior, 2),
+                     sigma_alpha = rep(params$sigma_cf_prior, 2),
+                     mu_sd_cf = rep(params$mu_sd_cf_prior, 2),
+                     sigma_sd_cf = rep(params$sigma_sd_cf_prior, 2))
+  
+  stan_out[[i]] <-
+    bmcm_stan(
+      input_data = input_dat,
+      formula = "Surv(time=times, event=status) ~ 1",
+      cureformula = "~ tx + (1 | endpoint)",
+      family_latent = params$family_latent_model,
+      # prior_latent = NA,   ##TODO: how are these used by the Stan code?
+      prior_cure = prior_cure,
+      centre_coefs = TRUE,
+      bg_model = "bg_fixed",
+      bg_varname = "rate",
+      bg_hr = 1,
+      t_max = 5,
+      save_stan_code = TRUE)
+}
 
 #######
 # plot

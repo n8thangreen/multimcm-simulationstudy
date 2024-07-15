@@ -84,6 +84,7 @@ rsurv_mix <- function(nsample = 20,
   
   res <- list()
   median_times <- vector(length = n_endpoints)
+  rmst <- vector(length = n_endpoints)
   
   # sample times for each endpoint
   for (i in seq_len(n_endpoints)) {
@@ -94,7 +95,7 @@ rsurv_mix <- function(nsample = 20,
             distn = distn,
             prop_cens = prop_cens)
     
-    median_fn <- glue("{distn}_median")
+    median_fn <- glue("{distn}_median_cf")
     median_times[i] <- do.call(median_fn, params[[i]])
     
     rmst_fn <- glue("{distn}_rmst")

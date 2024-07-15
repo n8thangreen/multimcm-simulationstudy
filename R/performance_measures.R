@@ -3,9 +3,9 @@
 #' 
 performance_measures <- function(samples, true_value, ci_level = 0.95) {
   
-  bias <- mean(samples) - true_value
-  empirical_se <- sd(samples)
-  mse <- mean((samples - true_value)^2)
+  bias <- mean(samples, na.rm = TRUE) - true_value
+  empirical_se <- stats::sd(samples, na.rm = TRUE)
+  mse <- mean((samples - true_value)^2, na.rm = TRUE)
   coverage <- calc_coverage(samples, true_value, ci_level)
   
   c(bias = bias,
@@ -19,7 +19,7 @@ calc_coverage <- function(samples, true_value, ci_level = 0.95) {
   
   lower_quantile <- (1 - ci_level) / 2
   upper_quantile <- 1 - lower_quantile
-  credible_interval <- quantile(samples, probs = c(lower_quantile, upper_quantile))
+  credible_interval <- quantile(samples, probs = c(lower_quantile, upper_quantile), na.rm = TRUE)
   coverage <- ifelse(true_value >= credible_interval[1] &
                        true_value <= credible_interval[2],
                      1, 0)

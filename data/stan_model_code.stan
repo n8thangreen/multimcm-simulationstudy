@@ -336,19 +336,22 @@ for (j in 1:nTx) {
 // restricted mean survival time
 for (i in 1:nTx) {
   rmst_1[i] = cf_1[i]*t_max + (1 - cf_1[i])*rmst_weibull(shape_1, mean_1, t_max);
-  median_1[i] = median_surv_weibull(shape_1, mean_1);
+  median_1[i] = median_surv_cf_weibull(shape_1, mean_1, cf_1[i]);
+  //median_1[i] = median_surv_weibull(shape_1, mean_1);  // uncured
 }
 
  // restricted mean survival time
 for (i in 1:nTx) {
   rmst_2[i] = cf_2[i]*t_max + (1 - cf_2[i])*rmst_weibull(shape_2, mean_2, t_max);
-  median_2[i] = median_surv_weibull(shape_2, mean_2);
+  median_2[i] = median_surv_cf_weibull(shape_2, mean_2, cf_2[i]);
+  //median_2[i] = median_surv_weibull(shape_2, mean_2);  // uncured
 }
 
  // restricted mean survival time
 for (i in 1:nTx) {
   rmst_3[i] = cf_3[i]*t_max + (1 - cf_3[i])*rmst_weibull(shape_3, mean_3, t_max);
-  median_3[i] = median_surv_weibull(shape_3, mean_3);
+  median_3[i] = median_surv_cf_weibull(shape_3, mean_3, cf_3[i]);
+  //median_3[i] = median_surv_weibull(shape_3, mean_3);  // uncured
 }
 // prior mean checks
 // pmean_pfs = exp(pbeta_pfs);

@@ -9,8 +9,8 @@
 
 # targets/estimates:
 # * RMST of separate curves
-# * cure fraction
-# * median survival time 
+# * cure fractions
+# * median survival times
 
 # performance measures:
 # * bias
@@ -26,21 +26,23 @@ library(rstan)
 load("data/stan_out.RData")
 load("data/input_data.RData")
 
-target_names <- c("rmst")  #, "cf", "median")
+target_names <- c("rmst", "median", "cf")  #, "cf", "rmst", 
 pm <- list()
 
 # scenarios
 for (i in seq_along(stan_out)) {
   fit <- stan_out[[i]]
+  pm[[i]] <- list()
   
   # estimates
   for (j in target_names) {
-    true_vals <- attr(input_data[[1]], which = j)  #test
-    # true_vals <- attr(input_data[[i]], which = j)
-    pm[[i]] <- bmcm_performance_measures(fit, par_nm = j, true_vals)
+    true_vals <- attr(input_data[[i]], which = j)
+    
+    pm[[i]][[j]] <- bmcm_performance_measures(fit, par_nm = j, true_vals)
   }
 }
 
+pm
 
 save(pm, file = "data/performance_measures.RData")
 
