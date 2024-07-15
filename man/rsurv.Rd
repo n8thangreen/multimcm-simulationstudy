@@ -9,3 +9,11 @@ rsurv(n = 100, distn = "exp", prop_cens = 0.1, params = list(rate = 1))
 \description{
 Generate time to event sample with censoring
 }
+\examples{
+
+rsurv(n = 100,
+      distn = "exp",
+      prop_cens = 0.1,
+      params = list(rate = 1))
+
+}

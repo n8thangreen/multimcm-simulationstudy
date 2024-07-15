@@ -10,6 +10,7 @@ rsurv_mix(
   t_cutpoint,
   mu_cf = 0.2,
   sigma_cf,
+  cf_sample_method = "random",
   distn = "exp",
   prop_cens = 0,
   params = list(list(rate = 1), list(rate = 1))

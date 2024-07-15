@@ -97,6 +97,9 @@ rsurv_mix <- function(nsample = 20,
     median_fn <- glue("{distn}_median")
     median_times[i] <- do.call(median_fn, params[[i]])
     
+    rmst_fn <- glue("{distn}_rmst")
+    rmst[i] <- do.call(rmst_fn, c(params[[i]], tmax = t_cutpoint))
+    
     # hierarchically sample cure status
     # curestatus <- rbinom(nsample, size = 1, prob = cf[i]) + 1  # random sampled
     
@@ -129,7 +132,7 @@ rsurv_mix <- function(nsample = 20,
   
   structure(
     do.call(rbind, res),
-    # rmst = rmst,  ##TODO
+    rmst = rmst,
     median = median_times,
     cf = cf)
 }
