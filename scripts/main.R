@@ -134,7 +134,10 @@ for (i in 1:nrow(scenario_data)) {
 #######
 # plot
 
-plot_S_joint(stan_out[[i]], add_km = TRUE) + xlim(0,5)
+for (i in seq_along(stan_out)) {
+  gg <- plot_S_joint(stan_out[[i]], add_km = TRUE) + xlim(0,5) + facet_wrap(vars(endpoint))
+  ggsave(plot = gg, device = "png", filename = glue::glue("plots/survival_plots_{i}.png"))
+}
 
 save(stan_out, file = "data/stan_out.RData")
 

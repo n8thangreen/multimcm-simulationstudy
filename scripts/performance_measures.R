@@ -22,11 +22,12 @@
 ##TODO: how to use posterior package?
 
 library(rstan)
+library(purrr)
 
 load("data/stan_out.RData")
 load("data/input_data.RData")
 
-target_names <- c("rmst", "median", "cf")  #, "cf", "rmst", 
+target_names <- c("rmst", "median", "cf")
 pm <- list()
 
 # scenarios
@@ -49,6 +50,47 @@ save(pm, file = "data/performance_measures.RData")
 
 ########
 # plots
+
+# measure <- "rmst"
+# measure <- "cf"
+measure <- "median"
+
+plot_dat <- pm |> 
+  map(measure) |> 
+  map(~as.data.frame(.x)) |> 
+  map(~mutate(.x, endpoint = 1:n())) |> 
+  list_rbind(names_to = "scenario")
+
+## drop uniquely large value  
+plot_dat <- plot_dat[-91,]
+
+# lollipop plot
+
+# bias
+
+plot_dat %>%
+  # arrange(val) |> 
+  # mutate(name=factor(name, levels=name)) |>    # update the factor levels
+  ggplot(aes(x = endpoint, y = bias)) +
+  geom_segment(aes(xend = endpoint, yend=0), color = "grey", linewidth = 2) +
+  geom_point( size=4, color="black") +
+  facet_wrap(vars(scenario)) +
+  coord_flip() +
+  theme_bw() +
+  xlab("")
+
+# se
+## drop uniquely large value  
+plot_dat <- plot_dat[-11,]
+
+plot_dat %>%
+  ggplot(aes(x = endpoint, y = empirical_se)) +
+  geom_segment(aes(xend = endpoint, yend=0), color = "grey", linewidth = 2) +
+  geom_point( size=4, color="black") +
+  facet_wrap(vars(scenario)) +
+  coord_flip() +
+  theme_bw() +
+  xlab("")
 
 
 #########
