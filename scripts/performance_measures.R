@@ -121,13 +121,19 @@ scenario_mean_table <- function(data_list) {
   result
 }
 
-map(pm, "rmst") |> 
+rmst_tab <- 
+  map(pm, "rmst") |> 
   scenario_mean_table()
 
-map(pm, "cf") |> 
+cf_tab <- 
+  map(pm, "cf") |> 
   scenario_mean_table()
 
-map(pm, "median") |> 
+median_tab <- 
+  map(pm, "median") |> 
   scenario_mean_table()
 
+write.csv(rmst_tab, file = "output_data/rmst_table.csv", row.names = FALSE)
+write.csv(cf_tab, file = "output_data/cf_table.csv", row.names = FALSE)
+write.csv(median_tab, file = "output_data/median_table.csv", row.names = FALSE)
 
