@@ -23,6 +23,8 @@
 
 library(rstan)
 library(purrr)
+library(dplyr)
+library(ggplot2)
 
 load("data/stan_out.RData")
 load("data/input_data.RData")
@@ -51,46 +53,44 @@ save(pm, file = "data/performance_measures.RData")
 ########
 # plots
 
-# measure <- "rmst"
-# measure <- "cf"
-measure <- "median"
+load("data/performance_measures.RData")
+
+# target <- "rmst"
+# target <- "cf"
+target <- "median"
+
+quo_measure <- quo(empirical_se)
+# quo_measure <- quo(bias)
 
 plot_dat <- pm |> 
-  map(measure) |> 
+  map(target) |> 
   map(~as.data.frame(.x)) |> 
   map(~mutate(.x, endpoint = 1:n())) |> 
-  list_rbind(names_to = "scenario")
+  list_rbind(names_to = "scenario") |> 
+  mutate(endpoint = factor(endpoint))
+  # arrange(val)
 
 ## drop uniquely large value  
-plot_dat <- plot_dat[-91,]
+# plot_dat <- plot_dat[-91,]
+# plot_dat <- plot_dat[-11,]
 
 # lollipop plot
 
-# bias
+# clean measure string
+y_label <- stringr::str_to_sentence(gsub(pattern = "\\_", " ", quo_name(quo_measure)))
 
-plot_dat %>%
-  # arrange(val) |> 
-  # mutate(name=factor(name, levels=name)) |>    # update the factor levels
-  ggplot(aes(x = endpoint, y = bias)) +
+plot_dat |> 
+  ggplot(aes(x = endpoint, y = !!quo_measure)) +
   geom_segment(aes(xend = endpoint, yend=0), color = "grey", linewidth = 2) +
-  geom_point( size=4, color="black") +
+  geom_point(size=4, color="black") +
   facet_wrap(vars(scenario)) +
   coord_flip() +
   theme_bw() +
-  xlab("")
+  xlab("Endpoint ID") +
+  ylab(y_label)
+  # ylim(0,5)
 
-# se
-## drop uniquely large value  
-plot_dat <- plot_dat[-11,]
-
-plot_dat %>%
-  ggplot(aes(x = endpoint, y = empirical_se)) +
-  geom_segment(aes(xend = endpoint, yend=0), color = "grey", linewidth = 2) +
-  geom_point( size=4, color="black") +
-  facet_wrap(vars(scenario)) +
-  coord_flip() +
-  theme_bw() +
-  xlab("")
+ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}.png"))
 
 
 #########
