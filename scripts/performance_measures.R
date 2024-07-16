@@ -56,11 +56,11 @@ save(pm, file = "data/performance_measures.RData")
 load("data/performance_measures.RData")
 
 # target <- "rmst"
-# target <- "cf"
-target <- "median"
+target <- "cf"
+# target <- "median"
 
-quo_measure <- quo(empirical_se)
-# quo_measure <- quo(bias)
+# quo_measure <- quo(empirical_se)
+quo_measure <- quo(bias)
 
 plot_dat <- pm |> 
   map(target) |> 
@@ -95,3 +95,39 @@ ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}.pn
 
 #########
 # tables
+
+#
+scenario_mean_table <- function(data_list) {
+  
+  result <- data.frame(Scenario = character(),
+                       Coverage = numeric(),
+                       AbsoluteBiasMean = numeric(),
+                       EmpiricalSE = numeric(),
+                       stringsAsFactors = FALSE)
+  
+  for (i in seq_along(data_list)) {
+      temp_data <- data_list[[i]]
+      coverage <- mean(temp_data[, "coverage"])
+      abs_bias_mean <- mean(abs(temp_data[, "bias"]))
+      empirical_se <- mean(temp_data[, "empirical_se"])
+      
+      result <- rbind(result,
+                      data.frame(Scenario = i,
+                                 Coverage = coverage,
+                                 AbsoluteBiasMean = abs_bias_mean,
+                                 EmpiricalSE = empirical_se))
+  }
+  
+  result
+}
+
+map(pm, "rmst") |> 
+  scenario_mean_table()
+
+map(pm, "cf") |> 
+  scenario_mean_table()
+
+map(pm, "median") |> 
+  scenario_mean_table()
+
+
