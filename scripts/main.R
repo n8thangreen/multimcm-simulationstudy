@@ -51,6 +51,7 @@ for (i in 1:16) {
 }
 
 save(input_data, file = "data/input_data.RData")
+# load(file = "data/input_data.RData")
 
 
 ########
@@ -64,6 +65,7 @@ fit_dat <- survfit(Surv(times, status) ~ endpoint, data = input_data[[1]])
 plot(fit_dat, col = rgb(0,0,0, alpha = 0.1))
 abline(h = exp(-1.39)/(1 + exp(-1.39)), col = "red")
 
+png(filename = "plots/simulated_survival_plots.png", width = 20, height = 20, units = "cm", res = 300)
 
 # grid of plots
 par(mfrow = c(4,4))
@@ -81,11 +83,11 @@ for (i in seq_along(input_data)) {
     group_by(endpoint) |>
     summarise(x = sum(curestatus == 2) / n())
   
-  plot(fit_dat[[i]], col = rgb(0,0,0, alpha = 0.1), main = plot_title)
+  plot(fit_dat[[i]], col = rgb(0,0,0, alpha = 0.3), main = plot_title)
   abline(h = cure_fractions$x, col = "pink")
   abline(h = exp(-1.39)/(1 + exp(-1.39)), col = "red")
 }
-
+dev.off()
 
 ############
 # fit model

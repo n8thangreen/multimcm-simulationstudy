@@ -3,10 +3,17 @@
 #' 
 performance_measures <- function(samples, true_value, ci_level = 0.95) {
   
+  # estimates
   bias <- mean(samples, na.rm = TRUE) - true_value
   empirical_se <- stats::sd(samples, na.rm = TRUE)
   mse <- mean((samples - true_value)^2, na.rm = TRUE)
   coverage <- calc_coverage(samples, true_value, ci_level)
+  
+  # Monte Carlo SE of estimate
+  mc_se_bias <- stats::sd(samples, na.rm = TRUE) / sqrt(length(samples))
+  mc_se_empirical_se <- stats::sd(samples, na.rm = TRUE) / sqrt(2 * (length(samples) - 1))
+  mc_se_coverage <- sqrt(coverage * (1 - coverage) / length(samples))
+  # mc_se_mse ##TODO 
   
   c(bias = bias,
     empirical_se = empirical_se,

@@ -4,9 +4,6 @@
 # see
 # Using simulation studies to evaluate statistical methods (2017) Tim Morris et al, Stats in Medicine
 
-##TODO: 
-## * take average across curves?
-
 # targets/estimates:
 # * RMST of separate curves
 # * cure fractions
@@ -56,11 +53,11 @@ save(pm, file = "data/performance_measures.RData")
 load("data/performance_measures.RData")
 
 # target <- "rmst"
-target <- "cf"
-# target <- "median"
+# target <- "cf"
+target <- "median"
 
-# quo_measure <- quo(empirical_se)
-quo_measure <- quo(bias)
+quo_measure <- quo(empirical_se)
+# quo_measure <- quo(bias)
 
 plot_dat <- pm |> 
   map(target) |> 
@@ -76,32 +73,50 @@ plot_dat <- pm |>
 
 # lollipop plot
 
+scenario_data <-
+  read.csv(here::here("raw-data/scenarios.csv")) |>
+  as_tibble() 
+
+label_data <- scenario_data |> 
+  mutate(label = glue::glue("{data_id}: e={n_endpoints} n={nsample} p={prop_censoring} s={sigma_true}")) |> 
+  rename(scenario = id) |> 
+  mutate(label = factor(label, levels = unique(label))) |> 
+  select(label, scenario)
+
+plot_dat <- plot_dat |>
+  left_join(label_data, by = "scenario")
+
 # clean measure string
-y_label <- stringr::str_to_sentence(gsub(pattern = "\\_", " ", quo_name(quo_measure)))
+measure <- quo_name(quo_measure)
+y_label <- stringr::str_to_sentence(gsub(pattern = "\\_", " ", measure))
 
 plot_dat |> 
   ggplot(aes(x = endpoint, y = !!quo_measure)) +
   geom_segment(aes(xend = endpoint, yend=0), color = "grey", linewidth = 2) +
   geom_point(size=4, color="black") +
-  facet_wrap(vars(scenario)) +
+  facet_wrap(vars(label)) +
+  # facet_wrap(vars(scenario)) +
   coord_flip() +
   theme_bw() +
   xlab("Endpoint ID") +
-  ylab(y_label)
-  # ylim(0,5)
+  ylab(y_label) +
+  ylim(0, ifelse(target == "rmst", 10, 
+                 ifelse(target == "median" & measure == "empirical_se", 5, NA)))
 
-ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}.png"))
+ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}.png"),
+       height = 20, width = 20, dpi = 640, units = "cm")
 
 
 #########
 # tables
 
-#
+#' take average across curves
+#'
 scenario_mean_table <- function(data_list) {
   
   result <- data.frame(Scenario = character(),
                        Coverage = numeric(),
-                       AbsoluteBiasMean = numeric(),
+                       Bias = numeric(),
                        EmpiricalSE = numeric(),
                        stringsAsFactors = FALSE)
   
@@ -114,7 +129,7 @@ scenario_mean_table <- function(data_list) {
       result <- rbind(result,
                       data.frame(Scenario = i,
                                  Coverage = coverage,
-                                 AbsoluteBiasMean = abs_bias_mean,
+                                 Bias = abs_bias_mean,
                                  EmpiricalSE = empirical_se))
   }
   
@@ -133,6 +148,28 @@ median_tab <-
   map(pm, "median") |> 
   scenario_mean_table()
 
+combined_tab <- 
+  merge(rmst_tab, cf_tab, by = "Scenario") |> 
+  merge(median_tab, by = "Scenario") |> 
+  mutate(across(where(is.numeric), ~ round(., 2)))
+
+# xtable::xtable(combined_tab, digits = 3)
+
+
+library(kableExtra)
+
+input_table <-
+  scenario_data |> 
+  select(id, n_endpoints, nsample, prop_censoring, sigma_true) |>
+  filter(id %in% 1:16) |>
+  kable(format = "latex", booktabs = TRUE)
+
+output_table <-
+  kable(combined_tab, format = "latex", booktabs = TRUE) |> 
+  add_header_above(c(" ", "RMST" = 3, "Cure Fraction" = 3, "Median" = 3)) 
+  # kable_styling(latex_options = c("striped", "hold_position"))
+
+# save
 write.csv(rmst_tab, file = "output_data/rmst_table.csv", row.names = FALSE)
 write.csv(cf_tab, file = "output_data/cf_table.csv", row.names = FALSE)
 write.csv(median_tab, file = "output_data/median_table.csv", row.names = FALSE)
