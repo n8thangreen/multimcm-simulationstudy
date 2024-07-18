@@ -1,6 +1,6 @@
 
 #
-sample_zero_truncated_cauchy <- function(n=1000, location = 1, scale = 1) {
+sample_zero_truncated_cauchy <- function(n = 1000, location = 1, scale = 1) {
   samples <- numeric(n)
   i <- 1
   while (i <= n) {
@@ -22,6 +22,7 @@ quantile(samples, probs = c(0.025, 0.5, 0.975))
 density_est <- density(samples)
 plot(density_est)
 
+#
 invlogit <- function(x) exp(x)/(1 + exp(x))
 
 # global cure fraction mean prior
@@ -51,17 +52,18 @@ titles <-
        "Pessimistic informative",
        "Weakly informative")
 
+save(params, file = "data/cure_fraction_hyperparameters.RData")
+
 # i <- 1
 
-png(filename = "plots/cure_fraction_prior_densities.png", width = 20, height = 20, units = "cm", res = 640)
+png(filename = "plots/cure_fraction_prior_densities.png",
+    width = 20, height = 20, units = "cm", res = 640)
 
 par(mfrow = c(3,2))
 
 for (i in 1:5) {
-  
   cf_mean <- do.call(rnorm, c(n, params$mean[[i]]))
   cf_sd <- do.call(sample_zero_truncated_cauchy, c(n, params$sd[[i]]))
-  ##TODO: what is the parametrisation?...
   
   cf_global <- rnorm(n, cf_mean, cf_sd)
   cf <- invlogit(cf_global)
@@ -69,7 +71,9 @@ for (i in 1:5) {
   # global cure fraction plot
   # hist(cf, breaks = 100, freq = FALSE, main = titles[[i]])
   density_est <- density(cf, na.rm = TRUE, from = 0, to = 1, bw = 0.1)
-  plot(density_est, col = "blue", lwd = 2, main = paste0(gt::vec_fmt_roman(i, case = "lower"), ") ", titles[[i]]), xlab = "Probability")
+  plot(density_est, col = "blue", lwd = 2,
+       main = paste0(gt::vec_fmt_roman(i, case = "lower"), ") ", titles[[i]]),
+       xlab = "Probability")
   abline(v = 0.2, col = "red", lwd = 2)
 }
 

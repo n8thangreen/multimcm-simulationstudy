@@ -15,42 +15,43 @@ scenario_data <- read.csv(here::here("raw-data/scenarios.csv")) |> as_tibble()
 # simulated input data
 load(file = "data/input_data.RData")
 
+# global cure fraction hyperparameters
+save(params, file = "data/cure_fraction_hyperparameters.RData")
+
 
 ############
 # fit model
 
 stan_out <- list()
 
-# i <- 1
+# i <- 5   # prior
+j <- 1   # data
 
-for (i in 1:nrow(scenario_data)) {
+for (i in seq_along(params$mean)) {
   
-  params <- scenario_data[i, ]
-  input_dat <- mutate(input_data[[i]],
+  data_params <- scenario_data[j, ]
+  input_dat <- mutate(input_data[[j]],
                       tx = 1,           # only a single treatment
                       rate = 10^(-10))  # background hazard
   
-  ##TODO; errors with single treatment only
-  ##      fix in bmcm_stan()
   ## quick fix by duplicating inputs
   input_dat <- rbind(input_dat,
-                     mutate(input_data[[i]],
+                     mutate(input_data[[j]],
                             tx = 2,
                             rate = 10^(-100)))
   
   # duplicate for each treatment
-  prior_cure <- list(mu_alpha = rep(params$mu_cf_prior, 2),
-                     sigma_alpha = rep(params$sigma_cf_prior, 2),
-                     mu_sd_cf = rep(params$mu_sd_cf_prior, 2),
-                     sigma_sd_cf = rep(params$sigma_sd_cf_prior, 2))
+  prior_cure <- list(mu_alpha = rep(params$mean[[i]][[1]], 2),
+                     sigma_alpha = rep(params$mean[[i]][[2]], 2),
+                     mu_sd_cf = rep(params$sd[[i]][[1]], 2),
+                     sigma_sd_cf = rep(params$sd[[i]][[2]], 2))
   
   stan_out[[i]] <-
     bmcm_stan(
       input_data = input_dat,
       formula = "Surv(time=times, event=status) ~ 1",
       cureformula = "~ tx + (1 | endpoint)",
-      family_latent = params$family_latent_model,
-      # prior_latent = NA,   ##TODO: how are these used by the Stan code?
+      family_latent = data_params$family_latent_model,
       prior_cure = prior_cure,
       centre_coefs = TRUE,
       bg_model = "bg_fixed",
@@ -60,14 +61,16 @@ for (i in 1:nrow(scenario_data)) {
       save_stan_code = TRUE)
 }
 
+save(stan_out, file = "data/stan_out_cf_priors.RData")
+
 #######
 # plot
 
 for (i in seq_along(stan_out)) {
   gg <- plot_S_joint(stan_out[[i]], add_km = TRUE) + xlim(0,5) + facet_wrap(vars(endpoint))
-  ggsave(plot = gg, device = "png", filename = glue::glue("plots/survival_plots_{i}.png"))
+  # ggsave(plot = gg, device = "png", filename = glue::glue("plots/survival_plots_{i}.png"))
 }
 
-save(stan_out, file = "data/stan_out.RData")
+gg
 
 

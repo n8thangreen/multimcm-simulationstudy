@@ -23,12 +23,23 @@ library(purrr)
 library(dplyr)
 library(ggplot2)
 
-load("data/stan_out.RData")
+# # data scenarios
+# file_append <- ""
+
+# prior scenarios
+file_append <- "_cf_priors"
+
+load(glue::glue("data/stan_out{file_append}.RData"))
+
 load("data/input_data.RData")
 
 target_names <- c("rmst", "median", "cf")
 pm <- list()
 
+if (file_append == "_cf_priors") {
+  input_data <- rep(list(input_data[[1]]), length(stan_out))
+}
+  
 # scenarios
 for (i in seq_along(stan_out)) {
   fit <- stan_out[[i]]
@@ -44,20 +55,20 @@ for (i in seq_along(stan_out)) {
 
 pm
 
-save(pm, file = "data/performance_measures.RData")
+save(pm, file = glue::glue("data/performance_measures{file_append}.RData"))
 
 
 ########
 # plots
 
-load("data/performance_measures.RData")
+load(glue::glue("data/performance_measures{file_append}.RData"))
 
-# target <- "rmst"
+target <- "rmst"
 # target <- "cf"
-target <- "median"
+# target <- "median"
 
-quo_measure <- quo(empirical_se)
-# quo_measure <- quo(bias)
+# quo_measure <- quo(empirical_se)
+quo_measure <- quo(bias)
 
 plot_dat <- pm |> 
   map(target) |> 
@@ -66,10 +77,6 @@ plot_dat <- pm |>
   list_rbind(names_to = "scenario") |> 
   mutate(endpoint = factor(endpoint))
   # arrange(val)
-
-## drop uniquely large value  
-# plot_dat <- plot_dat[-91,]
-# plot_dat <- plot_dat[-11,]
 
 # lollipop plot
 
@@ -94,16 +101,35 @@ plot_dat |>
   ggplot(aes(x = endpoint, y = !!quo_measure)) +
   geom_segment(aes(xend = endpoint, yend=0), color = "grey", linewidth = 2) +
   geom_point(size=4, color="black") +
-  facet_wrap(vars(label)) +
-  # facet_wrap(vars(scenario)) +
+  # facet_wrap(vars(label)) +
+  facet_wrap(vars(scenario)) +  # without titles
   coord_flip() +
   theme_bw() +
   xlab("Endpoint ID") +
-  ylab(y_label) +
-  ylim(0, ifelse(target == "rmst", 10, 
-                 ifelse(target == "median" & measure == "empirical_se", 5, NA)))
+  ylab(y_label) #+
+  # ylim(0, ifelse(target == "rmst", 10, 
+  #                ifelse(target == "median" & measure == "empirical_se", 5, NA)))
 
 ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}.png"),
+       height = 20, width = 20, dpi = 640, units = "cm")
+
+# all performance measures on single plot
+
+plot_long <- plot_dat |> 
+  as.data.frame() |> 
+  reshape2::melt(id.vars = c("scenario","endpoint"),
+                 measure.vars = c("bias","empirical_se","mse"))
+
+plot_long |> 
+  ggplot(aes(x = endpoint, y = value)) +
+  geom_segment(aes(xend = endpoint, yend=0), color = "grey", linewidth = 2) +
+  geom_point(size=4, color="black") +
+  facet_grid(rows = vars(scenario), cols = vars(variable)) +
+  coord_flip() +
+  theme_bw() +
+  xlab("Endpoint ID")
+
+ggsave(filename = glue::glue("plots/lollipop_cf_priors_{target}_data_scenario_1.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
 
 
