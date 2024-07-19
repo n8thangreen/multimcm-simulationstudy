@@ -65,9 +65,9 @@ xx <- do.call(cbind, xx)
 colnames(xx) <- paste0(1:ncol(xx))
 
 p1 <- mcmc_intervals(xx, 
-               prob = 0.8,           # 80% credible intervals
-               prob_outer = 0.95) +  # 95% credible intervals
-geom_vline(xintercept = true_vals$sd_cf, linetype = "dashed", color = "red") +
+                     prob = 0.8,           # 80% credible intervals
+                     prob_outer = 0.95) +  # 95% credible intervals
+  geom_vline(xintercept = true_vals$sd_cf, linetype = "dashed", color = "red") +
   xlab("Standard deviation of global cure fraction") +
   theme_minimal()
 
@@ -76,9 +76,9 @@ xx <- map(stan_extract, ~as.matrix(.x[[1]])[,1])
 xx <- do.call(cbind, xx)
 colnames(xx) <- paste0(1:ncol(xx))
 p2 <- mcmc_intervals(xx, 
-               prob = 0.8,           # 80% credible intervals
-               prob_outer = 0.95) +  # 95% credible intervals
-geom_vline(xintercept = true_vals$lp_cf_global, linetype = "dashed", color = "red") +
+                     prob = 0.8,           # 80% credible intervals
+                     prob_outer = 0.95) +  # 95% credible intervals
+  geom_vline(xintercept = true_vals$lp_cf_global, linetype = "dashed", color = "red") +
   xlab("Mean of global cure fraction") +
   theme_minimal()
 
@@ -88,5 +88,84 @@ ggsave(grid_plot, filename = glue::glue("plots/posterior_forest_plot_global_cf.p
        height = 20, width = 20, dpi = 640, units = "cm")
 
 
+load(file = "data/cure_fraction_hyperparameters.RData")
 
 
+#################
+# include priors
+
+# Extract data from the existing plot
+plot_data <- mcmc_intervals_data(xx, 
+                                 prob = 0.8, 
+                                 prob_outer = 0.95)
+## mean
+
+# additional data for new bars
+mean_data <- plot_data
+for (i in 1:5) {
+  mean_data$ll[i] <- params$mean[[i]][[1]] - 1.96*params$mean[[i]][[2]]
+  mean_data$l[i] <- params$mean[[i]][[1]] - 1.28*params$mean[[i]][[2]]
+  mean_data$m[i] <- params$mean[[i]][[1]]
+  mean_data$h[i] <- params$mean[[i]][[1]] + 1.28*params$mean[[i]][[2]]
+  mean_data$hh[i] <- params$mean[[i]][[1]] + 1.96*params$mean[[i]][[2]]
+}
+
+# Add the additional bars to the plot
+p3 <- p2 + 
+  xlim(-4,2) +
+  geom_linerange(aes(y = parameter, xmin = ll, xmax = hh), 
+                 data = mean_data, 
+                 height = 0.2,    # Adjust the height to position below the main bars
+                 color = "green",  # Example color for the additional bars
+                 position = position_nudge(y = -0.2)) +
+  geom_linerange(aes(y = parameter, xmin = l, xmax = h), 
+                 data = mean_data,
+                 linewidth = 2,
+                 height = 0.2,    # Adjust the height to position below the main bars
+                 color = "darkgreen",  # Example color for the additional bars
+                 position = position_nudge(y = -0.2)) +
+  geom_point(aes(y = parameter, x = m), 
+             data = mean_data, 
+             shape = 21, 
+             fill = "green", 
+             color = "black",
+             position = position_nudge(y = -0.2),
+             size = 4)
+## sd
+
+# additional data for new bars
+sd_data <- plot_data
+for (i in 1:5) {
+  sd_data$ll[i] <- params$sd[[i]][[1]] - 1.96*params$sd[[i]][[2]]
+  sd_data$l[i] <- params$sd[[i]][[1]] - 1.28*params$sd[[i]][[2]]
+  sd_data$m[i] <- params$sd[[i]][[1]]
+  sd_data$h[i] <- params$sd[[i]][[1]] + 1.28*params$sd[[i]][[2]]
+  sd_data$hh[i] <- params$sd[[i]][[1]] + 1.96*params$sd[[i]][[2]]
+}
+
+# Add the additional bars to the plot
+p4 <- p1 + 
+  xlim(-5,6) +
+  geom_linerange(aes(y = parameter, xmin = ll, xmax = hh), 
+                 data = sd_data, 
+                 height = 0.2,    # Adjust the height to position below the main bars
+                 color = "green",  # Example color for the additional bars
+                 position = position_nudge(y = -0.2)) +
+  geom_linerange(aes(y = parameter, xmin = l, xmax = h), 
+                 data = sd_data,
+                 linewidth = 2,
+                 height = 0.2,    # Adjust the height to position below the main bars
+                 color = "darkgreen",  # Example color for the additional bars
+                 position = position_nudge(y = -0.2)) +
+  geom_point(aes(y = parameter, x = m), 
+             data = sd_data, 
+             shape = 21, 
+             fill = "green", 
+             color = "black",
+             position = position_nudge(y = -0.2),
+             size = 4)
+
+grid_plot <- gridExtra::grid.arrange(p1, p2, ncol = 2)
+
+ggsave(grid_plot, filename = glue::glue("plots/posterior_forest_plot_global_cf.png"),
+       height = 20, width = 20, dpi = 640, units = "cm")
