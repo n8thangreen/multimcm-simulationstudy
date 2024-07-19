@@ -23,6 +23,11 @@ library(purrr)
 library(dplyr)
 library(ggplot2)
 
+
+scenario_data <-
+  read.csv(here::here("raw-data/scenarios.csv")) |>
+  as_tibble() 
+
 # # data scenarios
 # file_append <- ""
 
@@ -57,6 +62,29 @@ pm
 
 save(pm, file = glue::glue("data/performance_measures{file_append}.RData"))
 
+# global cure fraction
+
+true_val_names <- c("cf_true", "sigma_true")
+
+# replicate the first scenario values
+true_vals <- scenario_data[1, true_val_names] |> 
+  rename(lp_cf_global = cf_true, sd_cf = sigma_true) |> 
+  # slice(rep(1:n(), each = 5)) |> 
+  as.list()
+
+pm_cf <- list()
+
+for (i in seq_along(stan_out)) {
+  fit <- stan_out[[i]]
+  pm_cf[[i]] <- list()
+
+  # estimates
+  for (j in c("lp_cf_global", "sd_cf")) {
+    
+    pm_cf[[i]][[j]] <- bmcm_performance_measures(fit, par_nm = j, true_vals[[j]], append = FALSE)
+  }
+}
+
 
 ########
 # plots
@@ -79,10 +107,6 @@ plot_dat <- pm |>
   # arrange(val)
 
 # lollipop plot
-
-scenario_data <-
-  read.csv(here::here("raw-data/scenarios.csv")) |>
-  as_tibble() 
 
 label_data <- scenario_data |> 
   mutate(label = glue::glue("{data_id}: e={n_endpoints} n={nsample} p={prop_censoring} s={sigma_true}")) |> 

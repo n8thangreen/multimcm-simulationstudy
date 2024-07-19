@@ -83,7 +83,9 @@ for (i in seq_along(input_data)) {
     group_by(endpoint) |>
     summarise(x = sum(curestatus == 2) / n())
   
-  plot(fit_dat[[i]], col = rgb(0,0,0, alpha = 0.3), main = plot_title)
+  plot(fit_dat[[i]], col = rgb(0,0,0, alpha = 0.3),
+       main = plot_title,
+       xlab = "Time", ylab = "Survival probability")
   abline(h = cure_fractions$x, col = "pink")
   abline(h = exp(-1.39)/(1 + exp(-1.39)), col = "red")
 }

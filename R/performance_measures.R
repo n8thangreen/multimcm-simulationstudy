@@ -37,12 +37,16 @@ calc_coverage <- function(samples, true_value, ci_level = 0.95) {
 #' 
 #' @importFrom posterior merge_chains as_draws
 #' 
-bmcm_performance_measures <- function(fit, par_nm, true_vals) {
+bmcm_performance_measures <- function(fit, par_nm, true_vals, append = TRUE) {
   res <- NULL
   n_endpoints <- length(true_vals)
   
   for (i in seq_len(n_endpoints)) {
-    par_nm_ <- paste0(par_nm, "_", i)
+    if (append) {
+      par_nm_ <- paste0(par_nm, "_", i)
+    } else {
+      par_nm_ <- par_nm
+    }
     true_val <- true_vals[i]
     
     # extract posterior samples
