@@ -1,18 +1,18 @@
 
 #' @import posterior
 #' 
-performance_measures <- function(samples, true_value, ci_level = 0.95) {
-  
+performance_measures <- function(theta_hat, true_value,
+                                 theta_hat_low = NA, theta_hat_upp = NA) {
   # estimates
-  bias <- mean(samples, na.rm = TRUE) - true_value
-  empirical_se <- stats::sd(samples, na.rm = TRUE)
-  mse <- mean((samples - true_value)^2, na.rm = TRUE)
-  coverage <- calc_coverage(samples, true_value, ci_level)
+  bias <- mean(theta_hat, na.rm = TRUE) - true_value
+  empirical_se <- stats::sd(theta_hat, na.rm = TRUE)
+  mse <- mean((theta_hat - true_value)^2, na.rm = TRUE)
+  coverage <- calc_coverage(true_value, theta_hat_low, theta_hat_upp)
   
   # Monte Carlo SE of estimate
-  mc_se_bias <- stats::sd(samples, na.rm = TRUE) / sqrt(length(samples))
-  mc_se_empirical_se <- stats::sd(samples, na.rm = TRUE) / sqrt(2 * (length(samples) - 1))
-  mc_se_coverage <- sqrt(coverage * (1 - coverage) / length(samples))
+  mc_se_bias <- stats::sd(theta_hat, na.rm = TRUE) / sqrt(length(theta_hat))
+  mc_se_empirical_se <- stats::sd(theta_hat, na.rm = TRUE) / sqrt(2 * (length(theta_hat) - 1))
+  mc_se_coverage <- sqrt(coverage * (1 - coverage) / length(theta_hat))
   # mc_se_mse ##TODO 
   
   c(bias = bias,
@@ -21,19 +21,20 @@ performance_measures <- function(samples, true_value, ci_level = 0.95) {
     coverage = coverage)
 }
 
-#
-calc_coverage <- function(samples, true_value, ci_level = 0.95) {
+#' @param theta.hat.low lower bound of interval estimate
+#' @param theta.hat.upp upper bound of interval estimate
+calc_coverage <- function(true_value,
+                          theta_hat_low = NA, theta_hat_upp = NA) {
+  if (is.na(theta_hat_low)) return()
   
-  lower_quantile <- (1 - ci_level) / 2
-  upper_quantile <- 1 - lower_quantile
-  credible_interval <- quantile(samples, probs = c(lower_quantile, upper_quantile), na.rm = TRUE)
-  coverage <- ifelse(true_value >= credible_interval[1] &
-                       true_value <= credible_interval[2],
-                     1, 0)
-  unname(coverage)
+  nsim <- length(theta_hat_low)
+  bin_vals <- ifelse(true_value >= theta_hat_low & true_value <= theta_hat_upp, 1, 0)
+  
+  sum(bin_vals)/nsim
 }
 
 #' statistics for all endpoints
+#' for deterministic cure fraction data
 #' 
 #' @importFrom posterior merge_chains as_draws
 #' 
@@ -55,6 +56,42 @@ bmcm_performance_measures <- function(fit, par_nm, true_vals, append = TRUE) {
     samples <- all_samples[[par_nm_]]
     
     res <- rbind(res, performance_measures(samples, true_val))
+  }
+  
+  res
+}
+
+#' statistics for all endpoints
+#' for full probabilistic analysis
+#' 
+#' @importFrom posterior merge_chains as_draws
+#' 
+bmcm_performance_measures_N <- function(stan_out_list, par_nm, true_vals, append = TRUE) {
+  res <- NULL
+  n_endpoints <- length(true_vals)
+  
+  for (i in seq_len(n_endpoints)) {
+    if (append) {
+      par_nm_ <- paste0(par_nm, "_", i)
+    } else {
+      par_nm_ <- par_nm
+    }
+    true_val <- true_vals[i]
+    
+    # extract posterior samples
+    samples <- lapply(stan_out_list,
+                      function(x) {
+                        stan_extract <- rstan::extract(x$output, pars = par_nm_)
+                        all_samples <- merge_chains(as_draws(stan_extract))[[1]]
+                        all_samples[[par_nm_]]
+                      })
+    theta_hat <- lapply(samples, mean)
+    theta_hat_low <- lapply(samples, quantile, probs = 0.025)
+    theta_hat_upp <- lapply(samples, quantile, probs = 0.975)
+    
+    res <- rbind(res,
+                 performance_measures(
+                   theta_hat, true_val, theta_hat_low, theta_hat_upp))
   }
   
   res
