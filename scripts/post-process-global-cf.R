@@ -165,7 +165,7 @@ p4 <- p1 +
              position = position_nudge(y = -0.2),
              size = 4)
 
-grid_plot <- gridExtra::grid.arrange(p1, p2, ncol = 2)
+grid_plot <- gridExtra::grid.arrange(p3, p4, ncol = 2)
 
 ggsave(grid_plot, filename = glue::glue("plots/posterior_forest_plot_global_cf.png"),
        height = 20, width = 20, dpi = 640, units = "cm")

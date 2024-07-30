@@ -45,21 +45,24 @@ rsurv <- function(n = 100,
 
 
 #' Survival mixture cure fraction model simulation
+#' for deterministic cure fraction and full
+#' random sampling
 #'
 #' @importFrom purrr transpose
 #'
-rsurv_mix <- function(nsample = 20,
-                      n_endpoints = 2,
-                      t_cutpoint,
-                      mu_cf = 0.2,  # logit scale
-                      sigma_cf,
-                      cf_sample_method = "random",
-                      distn = "exp",
-                      prop_cens = 0,
-                      params =
-                        list(
-                          list(rate = 1),
-                          list(rate = 1))) {
+rsurv_cf <- function(nsample = 20,
+                     n_endpoints = 2,
+                     t_cutpoint,
+                     mu_cf = 0.2,  # logit scale
+                     sigma_cf,
+                     cf_sample_method = "random",
+                     cf_indiv = "fixed",
+                     distn = "exp",
+                     prop_cens = 0,
+                     params =
+                       list(
+                         list(rate = 1),
+                         list(rate = 1))) {
   
   if (length(params) < n_endpoints) {
     params <- rep(params, length.out = n_endpoints)
@@ -96,19 +99,21 @@ rsurv_mix <- function(nsample = 20,
             prop_cens = prop_cens)
     
     median_fn <- glue("{distn}_median_cf")
-    median_times[i] <- do.call(median_fn, params[[i]])
+    median_times[i] <- do.call(median_fn, c(params[[i]], cf = cf[i]))
     
     rmst_fn <- glue("{distn}_rmst")
     rmst[i] <- do.call(rmst_fn, c(params[[i]], tmax = t_cutpoint))
     
-    # hierarchically sample cure status
-    # curestatus <- rbinom(nsample, size = 1, prob = cf[i]) + 1  # random sampled
-    
-    # deterministic fixed size of cured
-    num_cf <- round(nsample * cf[i])
-    cured_idx <- sample(1:nsample, size = num_cf, replace = FALSE)
-    curestatus <- rep(1, nsample)
-    curestatus[cured_idx] <- 2
+    if (cf_indiv == "random") {
+      # sample cure status for each individual
+      curestatus <- rbinom(nsample, size = 1, prob = cf[i]) + 1
+    } else if (cf_indiv == "fixed") {
+      # deterministic fixed size of cured
+      num_cf <- round(nsample * cf[i])
+      cured_idx <- sample(1:nsample, size = num_cf, replace = FALSE)
+      curestatus <- rep(1, nsample)
+      curestatus[cured_idx] <- 2
+    }
       
     # modify times
     res[[i]] <- res[[i]] |> 
