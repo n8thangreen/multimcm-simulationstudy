@@ -109,42 +109,6 @@ res <- parLapply(
 stopCluster(cl)
 
 
-## using foreach
-
-cl <- makeCluster(num_cores, type = "SOCK", outfile = "")
-registerDoSNOW(cl)
-
-pb <- txtProgressBar(max = n_sim, style = 3)
-
-progress <- function(n)
-  setTxtProgressBar(pb, n)
-
-opts <- list(progress = progress)
-
-res <- foreach(
-  j = 1:n_sim,
-  # .combine = 'comb',
-  # .multicombine = TRUE,
-  # .init = list(list(), list(), list(), list()),
-  .options.snow = opts,
-  .packages = c("boot")
-) %dopar% {
-  bmcm_stan(input_dat[[i]][[j]],
-            formula = "Surv(time=times, event=status) ~ 1",
-            cureformula = "~ tx + (1 | endpoint)",
-            family_latent = params$family_latent_model,
-            # prior_latent = NA,   ##TODO: how are these used by the Stan code?
-            prior_cure = prior_cure,
-            centre_coefs = TRUE,
-            bg_model = "bg_fixed",
-            bg_varname = "rate",
-            bg_hr = 1,
-            t_max = 5,
-            save_stan_code = TRUE)
-}
-
-stopCluster(cl)
-
   
 ##############################
 # deterministic cure fraction
