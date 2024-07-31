@@ -25,29 +25,30 @@ scenario_data <-
   read.csv(here::here("raw-data/scenarios.csv")) |>
   as_tibble() 
 
-data <- scenario_data[1, ]
-file_name <- glue::glue("N{data$nsample}_ne{data$n_endpoints}_pcens{data$prop_censoring}_sigma{data$sigma_true}")
-# data scenarios
-load(paste0("data/", file_name, ".RData"))
-# stan output
-load(paste0("data/stan_out_", file_name, ".RData"))
-
-load("data/input_data.RData")
-
 target_names <- c("rmst", "median", "cf")
 pm <- list()
 
 # scenarios
 # for (i in seq_along(stan_out)) {
-  i <- 2  
+for (i in 1:2) {
+
+  data <- scenario_data[i, ]
+  file_name <- glue::glue("N{data$nsample}_ne{data$n_endpoints}_pcens{data$prop_censoring}_sigma{data$sigma_true}")
   
-  # for (j in target_names) {
-    j <- "rmst"
+  # input data scenarios
+  load(paste0("data/", file_name, ".RData"))
+  
+  # stan output
+  load(paste0("data/stan_out_", file_name, ".RData"))
+  
+  pm[[i]] <- list()
+  
+  for (j in target_names) {
     true_vals <- attr(input_data[[i]], which = j)
     
-    pm[[j]] <- bmcm_performance_measures_N(stan_out, par_nm = j, true_vals)
-  # }
-# }
+    pm[[i]][[j]] <- bmcm_performance_measures_N(stan_out, par_nm = j, true_vals)
+  }
+}
 
 pm
 
@@ -72,7 +73,7 @@ plot_dat <- pm |>
   map(~mutate(.x, endpoint = 1:n())) |> 
   list_rbind(names_to = "scenario") |> 
   mutate(endpoint = factor(endpoint))
-  # arrange(val)
+# arrange(val)
 
 # lollipop plot
 
@@ -99,8 +100,8 @@ plot_dat |>
   theme_bw() +
   xlab("Endpoint ID") +
   ylab(y_label) #+
-  # ylim(0, ifelse(target == "rmst", 10, 
-  #                ifelse(target == "median" & measure == "empirical_se", 5, NA)))
+# ylim(0, ifelse(target == "rmst", 10, 
+#                ifelse(target == "median" & measure == "empirical_se", 5, NA)))
 
 ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
@@ -139,16 +140,16 @@ scenario_mean_table <- function(data_list) {
                        stringsAsFactors = FALSE)
   
   for (i in seq_along(data_list)) {
-      temp_data <- data_list[[i]]
-      coverage <- mean(temp_data[, "coverage"])
-      abs_bias_mean <- mean(abs(temp_data[, "bias"]))
-      empirical_se <- mean(temp_data[, "empirical_se"])
-      
-      result <- rbind(result,
-                      data.frame(Scenario = i,
-                                 Coverage = coverage,
-                                 Bias = abs_bias_mean,
-                                 EmpiricalSE = empirical_se))
+    temp_data <- data_list[[i]]
+    coverage <- mean(temp_data[, "coverage"])
+    abs_bias_mean <- mean(abs(temp_data[, "bias"]))
+    empirical_se <- mean(temp_data[, "empirical_se"])
+    
+    result <- rbind(result,
+                    data.frame(Scenario = i,
+                               Coverage = coverage,
+                               Bias = abs_bias_mean,
+                               EmpiricalSE = empirical_se))
   }
   
   result
@@ -185,7 +186,7 @@ input_table <-
 output_table <-
   kable(combined_tab, format = "latex", booktabs = TRUE) |> 
   add_header_above(c(" ", "RMST" = 3, "Cure Fraction" = 3, "Median" = 3)) 
-  # kable_styling(latex_options = c("striped", "hold_position"))
+# kable_styling(latex_options = c("striped", "hold_position"))
 
 # save
 write.csv(rmst_tab, file = "output_data/rmst_table.csv", row.names = FALSE)

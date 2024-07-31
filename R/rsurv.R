@@ -98,11 +98,12 @@ rsurv_cf <- function(nsample = 20,
             distn = distn,
             prop_cens = prop_cens)
     
+    # summary statistics target measures
     median_fn <- glue("{distn}_median_cf")
     median_times[i] <- do.call(median_fn, c(params[[i]], cf = cf[i]))
     
-    rmst_fn <- glue("{distn}_rmst")
-    rmst[i] <- do.call(rmst_fn, c(params[[i]], tmax = t_cutpoint))
+    rmst_fn <- glue("{distn}_rmst_cf")
+    rmst[i] <- do.call(rmst_fn, c(params[[i]], tmax = t_cutpoint, cf = cf[i]))
     
     if (cf_indiv == "random") {
       # sample cure status for each individual

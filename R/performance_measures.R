@@ -25,7 +25,7 @@ performance_measures <- function(theta_hat, true_value,
 #' @param theta.hat.upp upper bound of interval estimate
 calc_coverage <- function(true_value,
                           theta_hat_low = NA, theta_hat_upp = NA) {
-  if (is.na(theta_hat_low)) return()
+  if (any(is.na(theta_hat_low))) return()
   
   nsim <- length(theta_hat_low)
   bin_vals <- ifelse(true_value >= theta_hat_low & true_value <= theta_hat_upp, 1, 0)
@@ -67,6 +67,7 @@ bmcm_performance_measures <- function(fit, par_nm, true_vals, append = TRUE) {
 #' @importFrom posterior merge_chains as_draws
 #' 
 bmcm_performance_measures_N <- function(stan_out_list, par_nm, true_vals, append = TRUE) {
+
   res <- NULL
   n_endpoints <- length(true_vals)
   
@@ -85,9 +86,18 @@ bmcm_performance_measures_N <- function(stan_out_list, par_nm, true_vals, append
                         all_samples <- merge_chains(as_draws(stan_extract))[[1]]
                         all_samples[[par_nm_]]
                       })
-    theta_hat <- lapply(samples, mean)
-    theta_hat_low <- lapply(samples, quantile, probs = 0.025)
-    theta_hat_upp <- lapply(samples, quantile, probs = 0.975)
+    theta_hat <- sapply(samples, mean)
+    theta_hat_low <- sapply(samples, quantile, probs = 0.025, na.rm = TRUE)
+    theta_hat_upp <- sapply(samples, quantile, probs = 0.975, na.rm = TRUE)
+
+    ##TODO: deal with NaN?    
+    # theta_hat_low <- sapply(samples, function(x) {
+    #   if (all(is.nan(x))) {
+    #     NaN
+    #   } else {
+    #     quantile(x, probs = 0.025, na.rm = TRUE)
+    #   }
+    # })
     
     res <- rbind(res,
                  performance_measures(
