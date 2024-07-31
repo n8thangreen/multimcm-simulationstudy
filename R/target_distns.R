@@ -68,25 +68,25 @@ lognormal_rmst <- function (mu, sigma, tmax) {
 
 # restricted mean survival time
 exp_rmst_cf <- function (rate, tmax, cf) {
-  cf*t_max + (1 - cf)*exp_rmst(rate, t_max)
+  cf*tmax + (1 - cf)*exp_rmst(rate, tmax)
 }
 
 # restricted mean survival time
 weibull_rmst_cf <- function (shape, scale, tmax, cf) {
-  cf*t_max + (1 - cf)*weibull_rmst(rate, t_max)
+  cf*tmax + (1 - cf)*weibull_rmst(shape, scale, tmax)
 }
 
 # restricted mean survival time
 gompertz_rmst_cf <- function (shape, scale, tmax, cf) {
-  cf*t_max + (1 - cf)*gompertz_rmst(rate, t_max)
+  cf*tmax + (1 - cf)*gompertz_rmst(shape, scale, tmax)
 }
 
 # restricted mean survival time
 loglogistic_rmst_cf <- function (scale, shape, tmax, cf) {
-  cf*t_max + (1 - cf)*loglogistic_rmst(rate, t_max)
+  cf*tmax + (1 - cf)*loglogistic_rmst(scale, shape, tmax)
 }
 
 # restricted mean survival time
 lognormal_rmst_cf <- function (mu, sigma, tmax, cf) {
-  cf*t_max + (1 - cf)*lognormal_rmst(rate, t_max)
+  cf*tmax + (1 - cf)*lognormal_rmst(mu, sigma, tmax)
 }

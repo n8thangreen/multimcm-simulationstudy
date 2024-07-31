@@ -52,7 +52,7 @@ rsurv <- function(n = 100,
 #'
 rsurv_cf <- function(nsample = 20,
                      n_endpoints = 2,
-                     t_cutpoint,
+                     t_cutpoint = 5,
                      mu_cf = 0.2,  # logit scale
                      sigma_cf,
                      cf_sample_method = "random",

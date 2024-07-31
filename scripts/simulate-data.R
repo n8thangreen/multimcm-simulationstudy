@@ -33,10 +33,10 @@ scenario_data <- read.csv(here::here("raw-data/scenarios.csv")) |> as_tibble()
 # 
 # hist(exp(alpha)/(1 + exp(alpha)), breaks = 50, xlim = c(0,1))
 
-
 input_data <- list()
 
-# deterministic cure fraction sampling
+## deterministic cure fraction sampling
+
 for (i in 1:16) {
   data <- scenario_data[i, ]
   latent_params_true <- eval(parse(text = data$latent_params_true))
@@ -56,7 +56,7 @@ for (i in 1:16) {
 save(input_data, file = "data/determ_input_data.RData")
 # load(file = "data/determ_input_data.RData")
 
-# full probabilistic simulation
+## full probabilistic simulation
 
 n_sim <- 10
 
