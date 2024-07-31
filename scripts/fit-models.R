@@ -1,5 +1,5 @@
 # fit Bayesian mixture cure models
-# using simulation data
+# using two versions of simulation data
 
 
 library(parallel)
@@ -14,9 +14,12 @@ scenario_data <- read.csv(here::here("raw-data/scenarios.csv")) |> as_tibble()
 ###############################
 # full probabilistic sampling
 
+n_scenarios <- 16
+
 # load simulation data
-datasets_all <- vector(mode = "list", 16)
-for (i in 1:16) {
+datasets_all <- vector(mode = "list", n_scenarios)
+
+for (i in 1:n_scenarios) {
   data <- scenario_data[i, ]
   file_name <- glue::glue("N{data$nsample}_ne{data$n_endpoints}_pcens{data$prop_censoring}_sigma{data$sigma_true}")
   load(paste0("data/", file_name, ".RData"))

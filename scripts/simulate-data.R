@@ -35,9 +35,11 @@ scenario_data <- read.csv(here::here("raw-data/scenarios.csv")) |> as_tibble()
 
 input_data <- list()
 
+n_scenarios <- 16
+
 ## deterministic cure fraction sampling
 
-for (i in 1:16) {
+for (i in 1:n_scenarios) {
   data <- scenario_data[i, ]
   latent_params_true <- eval(parse(text = data$latent_params_true))
   
@@ -48,6 +50,7 @@ for (i in 1:16) {
              mu_cf = data$cf_true,
              sigma_cf = data$sigma_true,
              cf_sample_method = "quantiles",
+             cf_indiv = "fixed",
              distn = data$family_latent_true,
              prop_cens = data$prop_censoring,
              params = latent_params_true)
@@ -58,9 +61,10 @@ save(input_data, file = "data/determ_input_data.RData")
 
 ## full probabilistic simulation
 
+input_data <- list()
 n_sim <- 10
 
-for (i in 1:16) {
+for (i in 1:n_scenarios) {
   data <- scenario_data[i, ]
   latent_params_true <- eval(parse(text = data$latent_params_true))
   print(i)  
@@ -103,10 +107,10 @@ abline(h = exp(-1.39)/(1 + exp(-1.39)), col = "red")
 png(filename = "plots/simulated_survival_plots.png", width = 20, height = 20, units = "cm", res = 300)
 
 # grid of plots
+x11()
 par(mfrow = c(4,4))
 # par(mfrow = c(1,1))
 fit_dat <- list()
-
 for (i in seq_along(input_data)) {
   fit_dat[[i]] <- survfit(Surv(times, status) ~ endpoint, data = input_data[[i]])
   
