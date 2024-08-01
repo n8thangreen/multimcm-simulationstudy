@@ -30,19 +30,17 @@ n_sim <- length(datasets_all[[1]])
 input_dat <- list()
 
 # using parallel package
-num_cores <- detectCores() - 1
+# num_cores <- detectCores() - 1
+num_cores <- 6
 
 cl <- makeCluster(num_cores, type = "SOCK", outfile = "")
 
-clusterEvalQ(cl, {
-  # library(multimcm)
-  library(dplyr)
-})
+# clusterEvalQ(cl, {
+#   # library(multimcm)
+#   library(dplyr)
+# })
 
-# i <- 1
-for (i in 1:2) {
-# for (i in 1:nrow(scenario_data)) {
-  
+for (i in 1:n_scenarios) {
   params <- scenario_data[i, ]
   
   # duplicate for each treatment

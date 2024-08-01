@@ -72,6 +72,7 @@ bmcm_performance_measures_N <- function(stan_out_list, par_nm, true_vals, append
   n_endpoints <- length(true_vals)
   
   for (i in seq_len(n_endpoints)) {
+    
     if (append) {
       par_nm_ <- paste0(par_nm, "_", i)
     } else {

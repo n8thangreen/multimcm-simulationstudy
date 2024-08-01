@@ -29,9 +29,8 @@ target_names <- c("rmst", "median", "cf")
 pm <- list()
 
 # scenarios
-# for (i in seq_along(stan_out)) {
-for (i in 1:2) {
-
+for (i in 1:16) {
+  print(i)
   data <- scenario_data[i, ]
   file_name <- glue::glue("N{data$nsample}_ne{data$n_endpoints}_pcens{data$prop_censoring}_sigma{data$sigma_true}")
   
@@ -44,7 +43,7 @@ for (i in 1:2) {
   pm[[i]] <- list()
   
   for (j in target_names) {
-    true_vals <- attr(input_data[[i]], which = j)
+    true_vals <- rowMeans(sapply(input_data, attr, which = j))
     
     pm[[i]][[j]] <- bmcm_performance_measures_N(stan_out, par_nm = j, true_vals)
   }
@@ -52,20 +51,21 @@ for (i in 1:2) {
 
 pm
 
-# save(pm, file = glue::glue("data/performance_measures{file_append}.RData"))
+save(pm, file = glue::glue("data/performance_measures_N.RData"))
 
 
 ########
 # plots
 
-load(glue::glue("data/performance_measures{file_append}.RData"))
+load(glue::glue("data/performance_measures_N.RData"))
 
 target <- "rmst"
 # target <- "cf"
 # target <- "median"
 
 # quo_measure <- quo(empirical_se)
-quo_measure <- quo(bias)
+# quo_measure <- quo(bias)
+quo_measure <- quo(coverage)
 
 plot_dat <- pm |> 
   map(target) |> 
@@ -99,7 +99,8 @@ plot_dat |>
   coord_flip() +
   theme_bw() +
   xlab("Endpoint ID") +
-  ylab(y_label) #+
+  ylab(y_label) +
+  ylim(0,1)
 # ylim(0, ifelse(target == "rmst", 10, 
 #                ifelse(target == "median" & measure == "empirical_se", 5, NA)))
 
