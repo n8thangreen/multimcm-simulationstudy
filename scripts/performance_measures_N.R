@@ -94,13 +94,13 @@ plot_dat |>
   ggplot(aes(x = endpoint, y = !!quo_measure)) +
   geom_segment(aes(xend = endpoint, yend=0), color = "grey", linewidth = 2) +
   geom_point(size=4, color="black") +
-  # facet_wrap(vars(label)) +
-  facet_wrap(vars(scenario)) +  # without titles
+  facet_wrap(vars(label)) +
+  # facet_wrap(vars(scenario)) +  # without titles
   coord_flip() +
   theme_bw() +
   xlab("Endpoint ID") +
-  ylab(y_label) +
-  ylim(0,1)
+  ylab(y_label) #+
+  # ylim(0,1)
 # ylim(0, ifelse(target == "rmst", 10, 
 #                ifelse(target == "median" & measure == "empirical_se", 5, NA)))
 
@@ -108,6 +108,7 @@ ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}.pn
        height = 20, width = 20, dpi = 640, units = "cm")
 
 # all performance measures on single plot
+# used for cure fraction prior base case scenario
 
 plot_long <- plot_dat |> 
   as.data.frame() |> 
@@ -129,6 +130,7 @@ ggsave(filename = glue::glue("plots/lollipop_cf_priors_{target}_data_scenario_1.
 
 #########
 # tables
+#########
 
 #' take average across curves
 #'
