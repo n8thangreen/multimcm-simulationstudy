@@ -65,29 +65,32 @@ input_data <- list()
 n_sim <- 10
 
 for (i in 1:n_scenarios) {
+  print(i)
+  
   data <- scenario_data[i, ]
   latent_params_true <- eval(parse(text = data$latent_params_true))
-  print(i)  
+  
+  rsurv_args <- list(n = data$nsample,
+                     n_endpoints = data$n_endpoints,
+                     t_cutpoint = data$t_cutpoint,
+                     mu_cf = data$cf_true,
+                     sigma_cf = data$sigma_true,
+                     cf_sample_method = "random",
+                     cf_indiv = "random",
+                     distn = data$family_latent_true,
+                     prop_cens = data$prop_censoring,
+                     params = latent_params_true)
   
   for (j in 1:n_sim) {
     suppressMessages(
-      input_data[[j]] <-
-        rsurv_cf(n = data$nsample,
-                 n_endpoints = data$n_endpoints,
-                 t_cutpoint = data$t_cutpoint,
-                 mu_cf = data$cf_true,
-                 sigma_cf = data$sigma_true,
-                 cf_sample_method = "random",
-                 cf_indiv = "random",
-                 distn = data$family_latent_true,
-                 prop_cens = data$prop_censoring,
-                 params = latent_params_true)
+      input_data[[j]] <- do.call(rsurv_cf, rsurv_args)
     )
-    # save each scenario to separate file
-    # good idea for large n_sim
-    file_name <- glue::glue("N{data$nsample}_ne{data$n_endpoints}_pcens{data$prop_censoring}_sigma{data$sigma_true}")
-    save(input_data, file = paste0("data/", file_name, ".RData"))
   }
+  
+  # save each scenario to separate file
+  # good idea for large n_sim
+  file_name <- glue::glue("N{data$nsample}_ne{data$n_endpoints}_pcens{data$prop_censoring}_sigma{data$sigma_true}")
+  save(input_data, file = paste0("data/", file_name, ".RData"))
 }
 
 
