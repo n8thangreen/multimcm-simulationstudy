@@ -59,13 +59,13 @@ save(pm, file = glue::glue("data/performance_measures_N.RData"))
 
 load(glue::glue("data/performance_measures_N.RData"))
 
-target <- "rmst"
+# target <- "rmst"
 # target <- "cf"
-# target <- "median"
+target <- "median"
 
 # quo_measure <- quo(empirical_se)
-# quo_measure <- quo(bias)
-quo_measure <- quo(coverage)
+quo_measure <- quo(bias)
+# quo_measure <- quo(coverage)
 
 plot_dat <- pm |> 
   map(target) |> 
