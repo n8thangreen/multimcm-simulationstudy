@@ -2,10 +2,12 @@
 % Please edit documentation in R/performance_measures.R
 \name{bmcm_performance_measures}
 \alias{bmcm_performance_measures}
-\title{statistics for all endpoints}
+\title{statistics for all endpoints
+for deterministic cure fraction data}
 \usage{
-bmcm_performance_measures(fit, par_nm, true_vals)
+bmcm_performance_measures(fit, par_nm, true_vals, append = TRUE)
 }
 \description{
 statistics for all endpoints
+for deterministic cure fraction data
 }
