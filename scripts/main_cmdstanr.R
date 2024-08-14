@@ -68,6 +68,8 @@ stan_model <-
 bmcm_params$precompiled_model_path <- 
   here::here("stan", glue::glue("{stan_model$model_name()}.exe"))
 
+# run for single scenario
+
 run_scenario(1, sim_params, bmcm_params)
 
 lapply(1:n_sim, \(x) run_scenario(x, sim_params, bmcm_params))

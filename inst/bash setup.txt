@@ -1,0 +1,19 @@
+# copy files
+cd C:\Users\n8tha\Documents\R\multimcm-simulationstudy\inst
+
+scp script.R sejjng1@myriad.rc.ucl.ac.uk:/home/sejjng1/
+scp model.stan sejjng1@myriad.rc.ucl.ac.uk:/home/sejjng1/
+scp cluster_script.sh sejjng1@myriad.rc.ucl.ac.uk:/home/sejjng1/
+
+# login
+ssh sejjng1@myriad.rc.ucl.ac.uk
+
+# run job
+qsub Scratch/bmcm/cluster_script.sh
+
+# # helpers
+#qstat
+#qdel '*'
+#jobhist
+
+exit
