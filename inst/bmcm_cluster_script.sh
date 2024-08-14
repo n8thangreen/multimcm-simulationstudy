@@ -32,10 +32,8 @@ module load r/4.4.0-openblas/gnu-10.2.0
 # add library folder to path
 export R_LIBS=/lustre/home/sejjng1/R/x86_64-pc-linux-gnu-library/4.2:$R_LIBS  
 
-# where should I save the files?
-#R --no-save < /home/sejjng1/script.R
-R --no-save < /home/sejjng1/Scratch/cluster_script.R
-#R --no-save < /home/sejjng1/Scratch/cluster_script.R > myR_job.out
+R --no-save < /home/sejjng1/Scratch/bmcm/cluster_script.R
+#R --no-save < /home/sejjng1/Scratch/bmcm/cluster_script.R > myR_job.out
 
 # Preferably, tar-up (archive) all output files onto the shared scratch area
 #tar -zcvf $HOME/Scratch/R_output/files_from_job_$JOB_ID.tar.gz $TMPDIR

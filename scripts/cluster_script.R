@@ -37,9 +37,9 @@ library(multimcm)
 cmdstanr::install_cmdstan()
 
 # functions
-source("/home/sejjng1/Scratch/functions/rsurv.R")
-source("/home/sejjng1/Scratch/functions/run_scenarios.R")
-source("/home/sejjng1/Scratch/functions/target_distns.R")
+source("/home/sejjng1/Scratch/bmcm/functions/rsurv.R")
+source("/home/sejjng1/Scratch/bmcm/functions/run_scenarios.R")
+source("/home/sejjng1/Scratch/bmcm/functions/target_distns.R")
 
 # read in scenario data
 scenario_data <- read.csv(here::here("/home/sejjng1/Scratch/scenarios.csv")) |> as_tibble()
