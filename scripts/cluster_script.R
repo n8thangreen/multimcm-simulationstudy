@@ -19,7 +19,7 @@ options(repos = c(CRAN = "https://cloud.r-project.org/"))
 install.packages("epicontacts")
 install.packages("tidybayes")
 install.packages("here")
-remotes::install_github("StatisticsHealthEconomics/multimcm")
+remotes::install_github("StatisticsHealthEconomics/multimcm", force = TRUE)
 
 install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev',
                                        'https://cran.ma.imperial.ac.uk/', # UK
@@ -30,19 +30,19 @@ library(purrr)
 library(glue)
 library(tibble)
 library(here)
-library(cmdstanr)
 library(parallel)
+library(cmdstanr)
 library(multimcm)
 
 cmdstanr::install_cmdstan()
 
 # functions
 source("/home/sejjng1/Scratch/bmcm/functions/rsurv.R")
-source("/home/sejjng1/Scratch/bmcm/functions/run_scenarios.R")
+source("/home/sejjng1/Scratch/bmcm/functions/run_scenario.R")
 source("/home/sejjng1/Scratch/bmcm/functions/target_distns.R")
 
 # read in scenario data
-scenario_data <- read.csv(here::here("/home/sejjng1/Scratch/scenarios.csv")) |> as_tibble()
+scenario_data <- read.csv("/home/sejjng1/Scratch/bmcm/scenarios.csv") |> as_tibble()
 
 i <- 1
 data <- scenario_data[i, ]
@@ -89,15 +89,15 @@ dummy_sample <-
   rbind(mutate(dummy_sample, tx = 2))
 
 stan_model <- 
-  precompile_bmcm_model(
+  multimcm::precompile_bmcm_model(
     input_data = dummy_sample,
     family_latent = bmcm_params$family_latent,
     cureformula = bmcm_params$cureformula,
     use_cmdstanr = TRUE,
     file_path = "/home/sejjng1/Scratch/")
 
-bmcm_params$precompiled_model_path <- 
-  glue::glue("/home/sejjng1/Scratch/{stan_model$model_name()}.exe")
+bmcm_params$precompiled_model_path <- stan_model$exe_path
+  # glue::glue("/home/sejjng1/Scratch/{stan_model$model_name()}.exe")
 
 # run for single scenario
 

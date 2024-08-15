@@ -65,8 +65,8 @@ stan_model <-
     use_cmdstanr = TRUE,
     file_path = here::here("stan"))
 
-bmcm_params$precompiled_model_path <- 
-  here::here("stan", glue::glue("{stan_model$model_name()}.exe"))
+bmcm_params$precompiled_model_path <- stan_model$exe_file()
+  # here::here("stan", glue::glue("{stan_model$model_name()}.exe"))
 
 # run for single scenario
 
