@@ -93,10 +93,10 @@ stan_model <-
     input_data = dummy_sample,
     family_latent = bmcm_params$family_latent,
     cureformula = bmcm_params$cureformula,
-    use_cmdstanr = TRUE,
-    file_path = "/home/sejjng1/Scratch/")
+    use_cmdstanr = TRUE)
+    # file_path = "/home/sejjng1/Scratch/")
 
-bmcm_params$precompiled_model_path <- stan_model$exe_path
+bmcm_params$precompiled_model_path <- stan_model$exe_file()
   # glue::glue("/home/sejjng1/Scratch/{stan_model$model_name()}.exe")
 
 # run for single scenario
@@ -113,7 +113,7 @@ cl <- makeCluster(num_cores, type = "SOCK", outfile = "")
 clusterEvalQ (cl, library(cmdstanr))
 
 # lapply(1:n_sim, \(x) run_scenario(x, sim_params, bmcm_params))
-output <- parLapply(cl, 1:n_sim, fitter, sim_params, bmcm_params)
+output <- parLapply(cl, 1:n_sim, run_scenario, sim_params, bmcm_params)
 
 stopCluster(cl)
 

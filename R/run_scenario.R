@@ -1,7 +1,7 @@
 
 # obtain posterior samples for a single simulated data set
 #
-run_scenario <- function(x, sim_params, bmcm_params) {
+run_scenario <- function(x, sim_params, bmcm_params, dir = "") {
   set.seed(1234)
   
   # sample data set
@@ -23,7 +23,7 @@ run_scenario <- function(x, sim_params, bmcm_params) {
   samples <- extract_params(fit$output, pattern = "^(median|rmst|cf)") 
   
   # save to file
-  path_name <- paste0("samples_", x, ".csv")
+  path_name <- paste0(dir, "samples_", x, ".csv")
   write.csv(samples, file = path_name)
   
   return()
