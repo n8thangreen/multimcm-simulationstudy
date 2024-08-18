@@ -107,3 +107,57 @@ bmcm_performance_measures_N <- function(stan_out_list, par_nm, true_vals, append
   
   res
 }
+
+
+#' Performance measures from cluster
+#' 
+#' statistics for all endpoints for full probabilistic analysis
+#' using posterior samples obtain using cluster
+#' 
+#' @param stan_out_list 
+#' @param par_nm 
+#' @param true_vals 
+#' @param append why?
+#'
+#' @importFrom posterior merge_chains as_draws
+#' 
+performance_measures_cluster <- function(stan_out_list,
+                                         par_nm,
+                                         true_vals,
+                                         append = TRUE) {
+  browser()
+  res <- NULL
+  n_endpoints <- length(true_vals)
+  
+  for (i in seq_len(n_endpoints)) {
+    
+    if (append) {
+      par_nm_ <- paste0(par_nm, "_", i)
+    } else {
+      par_nm_ <- par_nm
+    }
+    true_val <- true_vals[i]
+    
+    # extract posterior samples
+    samples <- purrr::map(stan_out_list, par_nm_)
+    theta_hat <- sapply(samples, mean)
+    theta_hat_low <- sapply(samples, quantile, probs = 0.025, na.rm = TRUE)
+    theta_hat_upp <- sapply(samples, quantile, probs = 0.975, na.rm = TRUE)
+    
+    ##TODO: deal with NaN?    
+    # theta_hat_low <- sapply(samples, function(x) {
+    #   if (all(is.nan(x))) {
+    #     NaN
+    #   } else {
+    #     quantile(x, probs = 0.025, na.rm = TRUE)
+    #   }
+    # })
+    
+    res <- rbind(res,
+                 performance_measures(
+                   theta_hat, true_val, theta_hat_low, theta_hat_upp))
+  }
+  
+  res
+}
+
