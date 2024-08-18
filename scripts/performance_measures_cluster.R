@@ -1,6 +1,6 @@
 # performance measures for
 # summary estimates for full probabilistic sampling
-# with samples produced using the cluster
+# with samples data produced using the cluster
 
 # see
 # Using simulation studies to evaluate statistical methods (2017) Tim Morris et al, Stats in Medicine
@@ -50,7 +50,7 @@ for (i in 1:16) {
       colnames(x) <- sub("\\.\\d+\\.$", "", colnames(x))
       
       # combine same column names  
-      df_long <- x %>%
+      df_long <- x |> 
         tidyr::pivot_longer(cols = -X, names_to = "variable", values_to = "value") |> 
         arrange(variable) |> 
         group_by(variable) |>
@@ -69,13 +69,13 @@ for (i in 1:16) {
 
 pm
 
-save(pm, file = glue::glue("data/performance_measures_N.RData"))
+save(pm, file = glue::glue("data/performance_measures_cluster.RData"))
 
 
 ########
 # plots
 
-load(glue::glue("data/performance_measures_N.RData"))
+load(glue::glue("data/performance_measures_cluster.RData"))
 
 # target <- "rmst"
 # target <- "cf"

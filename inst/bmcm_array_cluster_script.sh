@@ -36,7 +36,7 @@ export R_LIBS=/lustre/home/sejjng1/R/x86_64-pc-linux-gnu-library/4.2:$R_LIBS
 # Get the task ID
 TASK_ID=$SGE_TASK_ID
 
-R --no-save --args ${TASK_ID} < /home/sejjng1/Scratch/bmcm/cluster_script.R
+R --no-save --args ${TASK_ID} ${SCENARIO_ID} < /home/sejjng1/Scratch/bmcm/cluster_script.R
 #R --no-save < /home/sejjng1/Scratch/bmcm/cluster_script.R > myR_job.out
 
 # Preferably, tar-up (archive) all output files onto the shared scratch area
