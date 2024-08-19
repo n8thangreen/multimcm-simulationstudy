@@ -34,13 +34,17 @@ for (i in 1:16) {
   print(i)
   
   data <- scenario_data[i, ]
-  input_filename <- glue::glue("N{data$nsample}_ne{data$n_endpoints}_pcens{data$prop_censoring}_sigma{data$sigma_true}")
   
-  # input data scenarios
-  load(paste0("data/", input_filename, ".RData"))
+  cluster_data_dir <- glue::glue("output_data/cluster/output_folders/scenario_{i}/")
+             
+  # input data
+  true_vals_filenames <- dir(path = cluster_data_dir,
+                             pattern = "^true_values", full.names = TRUE)
+  true_vals <- lapply(true_vals_filenames, \(x) read.csv(x))
   
   # stan output
-  stan_filenames <- dir(glue::glue("output_data/cluster/scenario_{i}/"), full.names = TRUE)
+  stan_filenames <- dir(path = cluster_data_dir,
+                        pattern = "^samples", full.names = TRUE)
   stan_out <- lapply(stan_filenames, \(x) read.csv(x))
   
   # clean column names
@@ -61,8 +65,6 @@ for (i in 1:16) {
   pm[[i]] <- list()
   
   for (j in target_names) {
-    true_vals <- rowMeans(sapply(input_data, attr, which = j))
-    
     pm[[i]][[j]] <- performance_measures_cluster(stan_out, par_nm = j, true_vals)
   }
 }
@@ -77,13 +79,13 @@ save(pm, file = glue::glue("data/performance_measures_cluster.RData"))
 
 load(glue::glue("data/performance_measures_cluster.RData"))
 
-# target <- "rmst"
+target <- "rmst"
 # target <- "cf"
-target <- "median"
+# target <- "median"
 
 # quo_measure <- quo(empirical_se)
-quo_measure <- quo(bias)
-# quo_measure <- quo(coverage)
+# quo_measure <- quo(bias)
+quo_measure <- quo(coverage)
 
 plot_dat <- pm |> 
   map(target) |> 
@@ -117,8 +119,8 @@ plot_dat |>
   coord_flip() +
   theme_bw() +
   xlab("Endpoint ID") +
-  ylab(y_label) #+
-  # ylim(0,1)
+  ylab(y_label) +
+  ylim(0, 0.5)
 # ylim(0, ifelse(target == "rmst", 10, 
 #                ifelse(target == "median" & measure == "empirical_se", 5, NA)))
 
@@ -131,7 +133,7 @@ ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}.pn
 plot_long <- plot_dat |> 
   as.data.frame() |> 
   reshape2::melt(id.vars = c("scenario","endpoint"),
-                 measure.vars = c("bias","empirical_se","mse"))
+                 measure.vars = c("bias","empirical_se","mse","coverage"))
 
 plot_long |> 
   ggplot(aes(x = endpoint, y = value)) +

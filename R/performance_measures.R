@@ -117,7 +117,7 @@ bmcm_performance_measures_N <- function(stan_out_list, par_nm, true_vals, append
 #' @param stan_out_list 
 #' @param par_nm 
 #' @param true_vals 
-#' @param append why?
+#' @param append when there are multiple curves near to add a number after par_nm
 #'
 #' @importFrom posterior merge_chains as_draws
 #' 
@@ -125,9 +125,8 @@ performance_measures_cluster <- function(stan_out_list,
                                          par_nm,
                                          true_vals,
                                          append = TRUE) {
-  browser()
   res <- NULL
-  n_endpoints <- length(true_vals)
+  n_endpoints <- nrow(true_vals)
   
   for (i in seq_len(n_endpoints)) {
     
@@ -136,7 +135,7 @@ performance_measures_cluster <- function(stan_out_list,
     } else {
       par_nm_ <- par_nm
     }
-    true_val <- true_vals[i]
+    true_val <- true_vals[i, par_nm]
     
     # extract posterior samples
     samples <- purrr::map(stan_out_list, par_nm_)

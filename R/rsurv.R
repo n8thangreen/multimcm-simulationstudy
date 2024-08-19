@@ -98,6 +98,7 @@ rsurv_cf <- function(nsample = 20,
             distn = distn,
             prop_cens = prop_cens)
     
+    # true values
     # summary statistics target measures
     median_fn <- glue("{distn}_median_cf")
     median_times[i] <- do.call(median_fn, c(params[[i]], cf = cf[i]))

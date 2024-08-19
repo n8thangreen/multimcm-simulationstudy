@@ -1,11 +1,16 @@
 
 # obtain posterior samples for a single simulated data set
 #
-run_scenario <- function(x, sim_params, bmcm_params, dir = "") {
-  set.seed(1234)
+run_scenario <- function(x, sim_params, bmcm_params, dir = "", seed = NULL) {
+  set.seed(seed)
   
   # sample data set
   dat <- do.call(rsurv_cf, sim_params)
+  
+  true_values <- data.frame(
+    rmst = attr(dat, which = "rmst"),
+    median = attr(dat, which = "median"),
+    cf = attr(dat, which = "cf"))
   
   # background hazard
   dat$rate <- 10^(-10)
@@ -25,6 +30,9 @@ run_scenario <- function(x, sim_params, bmcm_params, dir = "") {
   # save to file
   path_name <- paste0(dir, "samples_", x, ".csv")
   write.csv(samples, file = path_name)
+
+  input_data_path <- paste0(dir, "true_values_", x, ".csv")
+  write.csv(true_values, file = input_data_path)
   
   return()
 }
