@@ -23,6 +23,15 @@ qsub -v SCENARIO_ID=2 bmcm_array_cluster_script.sh
 #scp -r sejjng1@myriad.rc.ucl.ac.uk:~/Scratch/output/scenario_1/ C:/Users/n8tha/Documents/R/multimcm-simulationstudy/output_data/cluster/scenario_1/
 scp -r sejjng1@myriad.rc.ucl.ac.uk:~/Scratch/output/scenario_1/ .
 
+# need login for each folder
+for ($i = 1; $i -le 16; $i++) {
+  scp -r "sejjng1@myriad.rc.ucl.ac.uk:~/Scratch/output/scenario_$i/" .
+}
+
+# zip folders
+tar -czvf output_folders.tar.gz /home/sejjng1/Scratch/output
+scp -r sejjng1@myriad.rc.ucl.ac.uk:~/output_folders.tar.gz .
+
 # delete log files
 rm Scratch/*R_job_1.e*
 rm Scratch/*R_job_1.o*
