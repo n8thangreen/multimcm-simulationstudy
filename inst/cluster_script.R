@@ -4,7 +4,9 @@
 
 # Get the task ID from the command line arguments
 args <- commandArgs(trailingOnly = TRUE)
+
 task_id <- as.integer(args[1])
+SCENARIO_ID <- as.integer(args[2])
 
 # modify the R library path so can pick up packages that are installed in own space
 .libPaths(c('/lustre/home/sejjng1/R/x86_64-pc-linux-gnu-library/4.2', .libPaths()))
@@ -61,10 +63,18 @@ source("/home/sejjng1/Scratch/bmcm/functions/target_distns.R")
 # read in scenario data
 scenario_data <- read.csv(here::here("/home/sejjng1/Scratch/bmcm/scenarios.csv")) |> as_tibble()
 
-i <- 1
+# scenario number
+i <- 2
+
+# from submitted job with Environment Variables
+exists("SCENARIO_ID")
+if (exists("SCENARIO_ID")) i <- SCENARIO_ID
+
 data <- scenario_data[i, ]
 latent_params_true <- eval(parse(text = data$latent_params_true))
-n_sim <- 2
+
+# number of parallel runs
+#n_sim <- 2
 
 sim_params <-
   list(
@@ -114,7 +124,7 @@ stan_model <-
     file_path = "/home/sejjng1/Scratch/")
 
 bmcm_params$precompiled_model_path <- stan_model$exe_file()
-  # glue::glue("/home/sejjng1/Scratch/{stan_model$model_name()}.exe")
+# glue::glue("/home/sejjng1/Scratch/{stan_model$model_name()}.exe")
 
 # check if scenario output folder exits and create
 output_dir <- glue::glue("/home/sejjng1/Scratch/output/scenario_{data$data_id}")
@@ -134,7 +144,7 @@ while (!success && attempt < max_attempts) {
   paste("Attempt", attempt, "of", max_attempts, "\n")
   
   fit <- try(
-    run_scenario(task_id, sim_params, bmcm_params, dir = output_dir)
+    run_scenario(task_id, sim_params, bmcm_params, dir = glue::glue("{output_dir}/"))
   )
   
   # check model ran successfully

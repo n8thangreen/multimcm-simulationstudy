@@ -26,17 +26,20 @@ scenario_data <-
   read.csv(here::here("raw-data/scenarios.csv")) |>
   as_tibble() 
 
+n_scenario <- nrow(scenario_data)
+
 target_names <- c("rmst", "median", "cf")
 pm <- list()
+summary_dat <- list()
 
 # scenarios
-for (i in 1:16) {
+for (i in 1:n_scenario) {
   print(i)
   
   data <- scenario_data[i, ]
   
   cluster_data_dir <- glue::glue("output_data/cluster/output_folders/scenario_{i}/")
-             
+  
   # input data
   true_vals_filenames <- dir(path = cluster_data_dir,
                              pattern = "^true_values", full.names = TRUE)
@@ -63,8 +66,18 @@ for (i in 1:16) {
     })
   
   pm[[i]] <- list()
+  summary_dat[[i]] <- list()
   
   for (j in target_names) {
+    
+    summary_dat[[i]][[j]] <- 
+      lapply(1:3,
+             \(x) samples_summary_stats(
+               stan_out,
+               par_nm = j,
+               true_vals,
+               endpoint_id = x))
+    
     pm[[i]][[j]] <- performance_measures_cluster(stan_out, par_nm = j, true_vals)
   }
 }
@@ -72,19 +85,21 @@ for (i in 1:16) {
 pm
 
 save(pm, file = glue::glue("data/performance_measures_cluster.RData"))
+save(summary_dat, file = glue::glue("data/summary_data_cluster.RData"))
 
 
 ########
 # plots
 
-load(glue::glue("data/performance_measures_cluster.RData"))
+load("data/performance_measures_cluster.RData")
 
-target <- "rmst"
-# target <- "cf"
+# target <- "rmst"
+target <- "cf"
 # target <- "median"
 
 # quo_measure <- quo(empirical_se)
 # quo_measure <- quo(bias)
+# quo_measure <- quo(relative_bias)
 quo_measure <- quo(coverage)
 
 plot_dat <- pm |> 
@@ -95,7 +110,58 @@ plot_dat <- pm |>
   mutate(endpoint = factor(endpoint))
 # arrange(val)
 
-# lollipop plot
+##########################
+# histograms of theta_hat
+
+endp <- 1
+# endp <- 2
+
+hist_dat <- 
+  summary_dat |> 
+  map(target) |> 
+  map(~ .x[[endp]])
+
+x_min <- min(map_dbl(hist_dat, ~ min(.x$theta_true)))
+x_max <- max(map_dbl(hist_dat, ~ max(.x$theta_true)))
+
+plot_list <- map(
+  hist_dat, 
+  ~ ggplot(.x, aes(x = theta_hat)) +
+    geom_histogram(bins = 20) +
+    geom_vline(xintercept = mean(.x$theta_true), color = "red") +
+    xlab(target) +
+    ylab("Frequency") +
+    xlim(x_min, x_max) +
+    theme_bw())
+
+patchwork::wrap_plots(plot_list, ncol = 4)
+
+
+##TODO:
+#######################
+# zip plot of coverage
+
+zip_dat <- 
+  summary_dat |> 
+  map("rmst") |> 
+  map(~ .x[[endp]])
+
+xx <- zip_dat[[1]]
+xx <- mutate(xx,
+             diff_upp = abs(theta_hat_upp - mean(theta_true)),
+             diff_low = abs(theta_hat_low - theta_true)) |> 
+  arrange(diff_upp) |> 
+  mutate(order = 1:n())
+
+ggplot(xx) +
+  geom_segment(aes(y = order, x = theta_hat_low, xend = theta_hat_upp)) + 
+                # position = position_dodge(width = 0.3),
+                # alpha = 0.6, size = 1.5) +
+  geom_vline(xintercept = mean(xx$theta_true), linetype = "dashed", color = "red")
+
+
+################
+# lollipop plots
 
 label_data <- scenario_data |> 
   mutate(label = glue::glue("{data_id}: e={n_endpoints} n={nsample} p={prop_censoring} s={sigma_true}")) |> 
@@ -119,8 +185,8 @@ plot_dat |>
   coord_flip() +
   theme_bw() +
   xlab("Endpoint ID") +
-  ylab(y_label) +
-  ylim(0, 0.5)
+  ylab(y_label) #+
+# ylim(0, 0.5)
 # ylim(0, ifelse(target == "rmst", 10, 
 #                ifelse(target == "median" & measure == "empirical_se", 5, NA)))
 

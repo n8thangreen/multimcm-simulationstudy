@@ -9,32 +9,39 @@ scp my_script.sh sejjng1@myriad.rc.ucl.ac.uk:/home/sejjng1/
 # login
 ssh sejjng1@myriad.rc.ucl.ac.uk
 
-# run job
+# run jobs
 #qsub bmcm_array_cluster_script.sh
-qsub -v SCENARIO_ID=2 bmcm_array_cluster_script.sh
+#qsub -v SCENARIO_ID=1 bmcm_array_cluster_script.sh
 
+for i in {1..16}; do
+  qsub -v SCENARIO_ID=$i bmcm_array_cluster_script.sh
+done
 
 # # helpers
 #qstat
 #qdel '*'
 #jobhist
 
+# delete log files
+rm Scratch/*.e*
+rm Scratch/*.o*
+rm Scratch/*core.*
+
 # copy samples to local machine
-#scp -r sejjng1@myriad.rc.ucl.ac.uk:~/Scratch/output/scenario_1/ C:/Users/n8tha/Documents/R/multimcm-simulationstudy/output_data/cluster/scenario_1/
-scp -r sejjng1@myriad.rc.ucl.ac.uk:~/Scratch/output/scenario_1/ .
+#C:/Users/n8tha/Documents/R/multimcm-simulationstudy/output_data/cluster/scenario_1/
+#scp -r sejjng1@myriad.rc.ucl.ac.uk:~/Scratch/output/scenario_1/ .
 
 # need login for each folder
-for ($i = 1; $i -le 16; $i++) {
-  scp -r "sejjng1@myriad.rc.ucl.ac.uk:~/Scratch/output/scenario_$i/" .
-}
+#for ($i = 1; $i -le 16; $i++) {
+#  scp -r "sejjng1@myriad.rc.ucl.ac.uk:~/Scratch/output/scenario_$i/" .
+#}
 
 # zip folders
 tar -czvf output_folders.tar.gz /home/sejjng1/Scratch/output
-scp -r sejjng1@myriad.rc.ucl.ac.uk:~/output_folders.tar.gz .
-
-# delete log files
-rm Scratch/*R_job_1.e*
-rm Scratch/*R_job_1.o*
-rm Scratch/*core.*
 
 exit
+
+# transfer
+scp -r sejjng1@myriad.rc.ucl.ac.uk:~/output_folders.tar.gz .
+
+
