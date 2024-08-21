@@ -92,29 +92,17 @@ save(summary_dat, file = glue::glue("data/summary_data_cluster.RData"))
 # plots
 
 load("data/performance_measures_cluster.RData")
-
-# target <- "rmst"
-target <- "cf"
-# target <- "median"
-
-# quo_measure <- quo(empirical_se)
-# quo_measure <- quo(bias)
-# quo_measure <- quo(relative_bias)
-quo_measure <- quo(coverage)
-
-plot_dat <- pm |> 
-  map(target) |> 
-  map(~as.data.frame(.x)) |> 
-  map(~mutate(.x, endpoint = 1:n())) |> 
-  list_rbind(names_to = "scenario") |> 
-  mutate(endpoint = factor(endpoint))
-# arrange(val)
+load("data/summary_data_cluster.RData")
 
 ##########################
 # histograms of theta_hat
 
-endp <- 1
-# endp <- 2
+# target <- "rmst"
+# target <- "cf"
+target <- "median"
+
+# endp <- 1
+endp <- 2
 
 hist_dat <- 
   summary_dat |> 
@@ -125,43 +113,100 @@ x_min <- min(map_dbl(hist_dat, ~ min(.x$theta_true)))
 x_max <- max(map_dbl(hist_dat, ~ max(.x$theta_true)))
 
 plot_list <- map(
-  hist_dat, 
-  ~ ggplot(.x, aes(x = theta_hat)) +
+  seq_along(hist_dat), 
+  ~ ggplot(hist_dat[[.x]], aes(x = theta_hat)) +
     geom_histogram(bins = 20) +
-    geom_vline(xintercept = mean(.x$theta_true), color = "red") +
+    geom_vline(xintercept = mean(hist_dat[[.x]]$theta_true), color = "red") +
     xlab(target) +
+    ggtitle(glue::glue("Scenario {.x}")) +
     ylab("Frequency") +
     xlim(x_min, x_max) +
     theme_bw())
 
 patchwork::wrap_plots(plot_list, ncol = 4)
 
+ggsave(filename = glue::glue("plots/theta_hat_hist_{target}_endpoint{endp}.png"),
+       height = 20, width = 20, dpi = 640, units = "cm")
 
 ##TODO:
 #######################
 # zip plot of coverage
 
+# target <- "rmst"
+# target <- "cf"
+target <- "median"
+
+endp <- 1
+# endp <- 2
+
 zip_dat <- 
   summary_dat |> 
-  map("rmst") |> 
+  map(target) |> 
   map(~ .x[[endp]])
 
-xx <- zip_dat[[1]]
-xx <- mutate(xx,
-             diff_upp = abs(theta_hat_upp - mean(theta_true)),
-             diff_low = abs(theta_hat_low - theta_true)) |> 
-  arrange(diff_upp) |> 
-  mutate(order = 1:n())
+xx <- map(zip_dat,
+          ~mutate(.x,
+             z = (theta_true - theta_hat)*4/(theta_hat_upp - theta_hat_low),
+             z_mean = (mean(theta_true) - theta_hat)*4/(theta_hat_upp - theta_hat_low),
+             p_value = 2*pnorm(-abs(z)),
+             p_value_mean = 2*pnorm(-abs(z_mean)),
+             sig = p_value < 0.05,
+             sig_mean = p_value_mean < 0.05)|> 
+  arrange(desc(p_value)) |> 
+  mutate(order = 1:n()) |> 
+  arrange(desc(p_value_mean)) |> 
+  mutate(order_mean = 1:n()))
 
-ggplot(xx) +
-  geom_segment(aes(y = order, x = theta_hat_low, xend = theta_hat_upp)) + 
-                # position = position_dodge(width = 0.3),
-                # alpha = 0.6, size = 1.5) +
-  geom_vline(xintercept = mean(xx$theta_true), linetype = "dashed", color = "red")
+plot_list <- 
+  map(xx,
+      ~ggplot(.x) +
+        geom_segment(aes(y = order, x = theta_hat_low, xend = theta_hat_upp, col = sig)) + 
+        geom_point(aes(y=order, x=theta_true), color = "grey", size = 0.3, inherit.aes = F) +
+        geom_hline(yintercept = 950, size = 1.2, linetype = "dashed") +
+        theme_bw() +
+        xlab(target) +
+        theme(legend.position="none"))
 
+patchwork::wrap_plots(plot_list, ncol = 4)
+
+ggsave(filename = glue::glue("plots/zip_pop_{target}_endpoint{endp}.png"),
+       height = 20, width = 20, dpi = 640, units = "cm")
+
+plot_list <- 
+  map(xx,
+      ~ggplot(.x) +
+        geom_segment(aes(y = order_mean, x = theta_hat_low, xend = theta_hat_upp, col = sig_mean)) + 
+        geom_vline(xintercept = mean(.x$theta_true), linetype = "dashed", color = "red") +
+        geom_hline(yintercept = 950, size = 1.2, linetype = "dashed") +
+        theme_bw() +
+        xlab(target) +
+        theme(legend.position="none"))
+
+patchwork::wrap_plots(plot_list, ncol = 4)
+
+ggsave(filename = glue::glue("plots/zip_pop_mean_{target}_endpoint{endp}.png"),
+       height = 20, width = 20, dpi = 640, units = "cm")
 
 ################
 # lollipop plots
+
+# target <- "rmst"
+# target <- "cf"
+target <- "median"
+
+# quo_measure <- quo(bias)
+# quo_measure <- quo(relative_bias)
+# quo_measure <- quo(coverage)
+quo_measure <- quo(empirical_se)
+
+# extract target data and combine scenarios
+plot_dat <- pm |> 
+  map(target) |> 
+  map(~as.data.frame(.x)) |> 
+  map(~mutate(.x, endpoint = 1:n())) |> 
+  list_rbind(names_to = "scenario") |> 
+  mutate(endpoint = factor(endpoint))
+# arrange(val)
 
 label_data <- scenario_data |> 
   mutate(label = glue::glue("{data_id}: e={n_endpoints} n={nsample} p={prop_censoring} s={sigma_true}")) |> 
@@ -225,6 +270,7 @@ scenario_mean_table <- function(data_list) {
   result <- data.frame(Scenario = character(),
                        Coverage = numeric(),
                        Bias = numeric(),
+                       RB = numeric(),
                        EmpiricalSE = numeric(),
                        stringsAsFactors = FALSE)
   
@@ -232,12 +278,14 @@ scenario_mean_table <- function(data_list) {
     temp_data <- data_list[[i]]
     coverage <- mean(temp_data[, "coverage"])
     abs_bias_mean <- mean(abs(temp_data[, "bias"]))
+    relative_bias <- mean(temp_data[, "relative_bias"])
     empirical_se <- mean(temp_data[, "empirical_se"])
     
     result <- rbind(result,
                     data.frame(Scenario = i,
                                Coverage = coverage,
                                Bias = abs_bias_mean,
+                               RB = relative_bias,
                                EmpiricalSE = empirical_se))
   }
   
@@ -274,7 +322,7 @@ input_table <-
 
 output_table <-
   kable(combined_tab, format = "latex", booktabs = TRUE) |> 
-  add_header_above(c(" ", "RMST" = 3, "Cure Fraction" = 3, "Median" = 3)) 
+  add_header_above(c(" ", "RMST" = 4, "Cure Fraction" = 4, "Median" = 4)) 
 # kable_styling(latex_options = c("striped", "hold_position"))
 
 # save
