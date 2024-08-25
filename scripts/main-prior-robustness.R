@@ -63,8 +63,11 @@ for (i in seq_along(params$mean)) {
 
 save(stan_out, file = "data/stan_out_cf_priors.RData")
 
+
 #######
 # plot
+
+load("data/stan_out_cf_priors.RData")
 
 for (i in seq_along(stan_out)) {
   gg <- plot_S_joint(stan_out[[i]], add_km = TRUE) + xlim(0,5) + facet_wrap(vars(endpoint))

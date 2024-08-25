@@ -1,9 +1,9 @@
 # to run on UCL myriad cluster
 #
 # script to run analysis using cmdstanr
-# for hierarchical model
+# for separate model
 
-# get the task ID from the command line arguments
+# get task ID from the command line arguments
 args <- commandArgs(trailingOnly = TRUE)
 
 task_id <- as.integer(args[1])
@@ -25,12 +25,6 @@ for (pkg in packages) {
 }
 
 ## install packages
-# install.packages("dplyr")
-# install.packages("survival")
-# install.packages("purrr")
-# install.packages("glue")
-# install.packages("ggplot2")
-# install.packages("tibble")
 
 if (!("multimcm" %in% installed_packages)) {
   remotes::install_github("StatisticsHealthEconomics/multimcm")
@@ -65,17 +59,19 @@ source("/home/sejjng1/Scratch/bmcm/functions/target_distns.R")
 scenario_data <- read.csv(here::here("/home/sejjng1/Scratch/bmcm/scenarios.csv")) |> as_tibble()
 
 # scenario number
-i <- 2
-
-# from submitted job with Environment Variables
-exists("SCENARIO_ID")
-if (exists("SCENARIO_ID")) i <- SCENARIO_ID
+i <- SCENARIO_ID
 
 data <- scenario_data[i, ]
 latent_params_true <- eval(parse(text = data$latent_params_true))
 
-# number of parallel runs
-#n_sim <- 2
+# prior parameters for each cure fraction
+# duplicate for each treatment
+prior_cure_list <- 
+  rep(list(mu_alpha = rep(data$mu_cf_prior, 2),
+       sigma_alpha = rep(data$sigma_cf_prior, 2)), data$n_endpoints)
+
+names(prior_cure_list) <-
+  paste0(names(prior_cure_list), "_", rep(1:data$n_endpoints, each = 2))
 
 sim_params <-
   list(
@@ -93,14 +89,9 @@ sim_params <-
 bmcm_params <- 
   list(
     formula = "Surv(time=times, event=status) ~ 1",
-    cureformula = "~ tx + (1 | endpoint)",
+    cureformula = "~ tx + endpoint",   # separate model
     family_latent = data$family_latent_model,
-    # duplicate for each treatment
-    prior_cure =   
-      list(mu_alpha = rep(data$mu_cf_prior, 2),
-           sigma_alpha = rep(data$sigma_cf_prior, 2),
-           mu_sd_cf = rep(data$mu_sd_cf_prior, 2),
-           sigma_sd_cf = rep(data$sigma_sd_cf_prior, 2)),
+    prior_cure = prior_cure_list,   
     centre_coefs = TRUE,
     bg_model = "bg_fixed",
     bg_varname = "rate",
@@ -134,7 +125,7 @@ if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
 
-# run for single scenario
+# scenario run
 
 max_attempts <- 2
 attempt <- 0
@@ -151,36 +142,6 @@ while (!success && attempt < max_attempts) {
   # check model ran successfully
   if (inherits(fit, "CmdStanMCMC")) success <- TRUE
 }
-
-# parallel over multiple cores
-#
-#num_cores <- 20
-#
-#cl <- makeCluster(num_cores, type = "SOCK", outfile = "")
-#
-# load packages on each R process
-#clusterEvalQ (cl, {
-#  library(cmdstanr)
-#  library(purrr)
-#  library(dplyr)
-#  library(glue)
-#  library(multimcm)
-#})
-#
-# export functions to the cluster
-#clusterExport(cl, varlist = c("rsurv_cf", "rsurv",    # functions
-#			      "run_scenario",
-#                              "extract_params",
-#                              "weibull_rmst_cf", "weibull_rmst",
-#                              "weibull_median_cf", "weibull_median",
-#			      "sim_params", "bmcm_params"))  # variables
-#
-# lapply(1:n_sim, \(x) run_scenario(x, sim_params, bmcm_params, "/home/sejjng1/Scratch/"))
-#output <- parLapply(cl, 1:n_sim, function(i) run_scenario(i, sim_params, bmcm_params, "/home/sejjng1/Scratch/"))
-#
-#stopCluster(cl)
-
-
 
 
 

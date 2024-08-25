@@ -110,27 +110,37 @@ for (i in 1:5) {
   mean_data$hh[i] <- params$mean[[i]][[1]] + 1.96*params$mean[[i]][[2]]
 }
 
+height <- 0
+
 # Add the additional bars to the plot
 p3 <- p2 + 
   xlim(-4,2) +
   geom_linerange(aes(y = parameter, xmin = ll, xmax = hh), 
                  data = mean_data, 
-                 height = 0.2,    # Adjust the height to position below the main bars
-                 color = "green",  # Example color for the additional bars
+                 height = height,    # Adjust the height to position below the main bars
+                 color = "lightgreen",  # Example color for the additional bars
                  position = position_nudge(y = -0.2)) +
   geom_linerange(aes(y = parameter, xmin = l, xmax = h), 
                  data = mean_data,
                  linewidth = 2,
-                 height = 0.2,    # Adjust the height to position below the main bars
+                 height = height,    # Adjust the height to position below the main bars
                  color = "darkgreen",  # Example color for the additional bars
                  position = position_nudge(y = -0.2)) +
   geom_point(aes(y = parameter, x = m), 
              data = mean_data, 
              shape = 21, 
-             fill = "green", 
+             fill = "lightgreen", 
              color = "black",
              position = position_nudge(y = -0.2),
-             size = 4)
+             size = 4) 
+  # geom_text(aes(y = parameter, x = 1, label = glue::glue("{m} [{round(l,2)},{round(h,2)}]")), 
+  #           data = mean_data, 
+  #           hjust = -0.1,   # Adjust horizontal justification to position text outside the plot area
+  #           size = 3.5,     # Adjust text size as needed
+  #           color = "black",
+  #           vjust = 0.5)
+  
+
 ## sd
 
 # additional data for new bars
@@ -143,27 +153,35 @@ for (i in 1:5) {
   sd_data$hh[i] <- params$sd[[i]][[1]] + 1.96*params$sd[[i]][[2]]
 }
 
+library(ggrepel)
+
 # Add the additional bars to the plot
 p4 <- p1 + 
   xlim(-5,6) +
   geom_linerange(aes(y = parameter, xmin = ll, xmax = hh), 
                  data = sd_data, 
-                 height = 0.2,    # Adjust the height to position below the main bars
-                 color = "green",  # Example color for the additional bars
+                 height = height,    # Adjust the height to position below the main bars
+                 color = "lightgreen",  # Example color for the additional bars
                  position = position_nudge(y = -0.2)) +
   geom_linerange(aes(y = parameter, xmin = l, xmax = h), 
                  data = sd_data,
                  linewidth = 2,
-                 height = 0.2,    # Adjust the height to position below the main bars
+                 height = height,    # Adjust the height to position below the main bars
                  color = "darkgreen",  # Example color for the additional bars
                  position = position_nudge(y = -0.2)) +
   geom_point(aes(y = parameter, x = m), 
              data = sd_data, 
              shape = 21, 
-             fill = "green", 
+             fill = "lightgreen", 
              color = "black",
              position = position_nudge(y = -0.2),
-             size = 4)
+             size = 4) 
+  # geom_text(aes(y = parameter, x = 2.5, label = glue::glue("{m} [{round(l,2)},{round(h,2)}]")), 
+  #           data = sd_data, 
+  #           hjust = -0.1,   # Adjust horizontal justification to position text outside the plot area
+  #           size = 3.5,     # Adjust text size as needed
+  #           color = "black",
+  #           vjust = 0.5) 
 
 grid_plot <- gridExtra::grid.arrange(p3, p4, ncol = 2)
 
