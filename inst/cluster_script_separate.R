@@ -12,19 +12,19 @@ SCENARIO_ID <- as.integer(args[2])
 # modify the R library path so can pick up packages that are installed in own space
 .libPaths(c('/lustre/home/sejjng1/R/x86_64-pc-linux-gnu-library/4.2', .libPaths()))
 
-# Set CRAN mirror
+# set CRAN mirror
 options(repos = c(CRAN = "https://cloud.r-project.org/"))
 
 packages <- c("epicontacts", "tidybayes", "here")
 installed_packages <- rownames(installed.packages())
+
+## install packages
 
 for (pkg in packages) {
   if (!(pkg %in% installed_packages)) {
     install.packages(pkg, repos = "https://cloud.r-project.org")
   }
 }
-
-## install packages
 
 if (!("multimcm" %in% installed_packages)) {
   remotes::install_github("StatisticsHealthEconomics/multimcm")
@@ -66,9 +66,10 @@ latent_params_true <- eval(parse(text = data$latent_params_true))
 
 # prior parameters for each cure fraction
 # duplicate for each treatment
+total_sigma <- data$sigma_cf_prior + data$mu_sd_cf_prior
 prior_cure_list <- 
   rep(list(mu_alpha = rep(data$mu_cf_prior, 2),
-       sigma_alpha = rep(data$sigma_cf_prior, 2)), data$n_endpoints)
+           sigma_alpha = rep(total_sigma, 2)), data$n_endpoints)
 
 names(prior_cure_list) <-
   paste0(names(prior_cure_list), "_", rep(1:data$n_endpoints, each = 2))
@@ -136,7 +137,8 @@ while (!success && attempt < max_attempts) {
   paste("Attempt", attempt, "of", max_attempts, "\n")
   
   fit <- try(
-    run_scenario(task_id, sim_params, bmcm_params, dir = glue::glue("{output_dir}/"))
+    run_scenario(task_id, sim_params, bmcm_params,
+                 dir = glue::glue("{output_dir}/"))
   )
   
   # check model ran successfully
