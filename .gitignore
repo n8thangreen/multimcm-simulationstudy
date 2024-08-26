@@ -4,4 +4,4 @@
 .Ruserdata
 data/stan_out*
 output_data/cluster
-stan/
+stan/*.exe

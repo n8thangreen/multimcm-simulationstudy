@@ -13,10 +13,10 @@
 
 # Set up the job array. In this instance we have requested 1000 tasks
 # numbered 1 to 1000
-#$ -t 1-1000
+#$ -t 1-2
 
 # Set the name of the job
-#$ -N R_job_1
+#$ -N R_job_bmcm
 
 # Set the working directory to somewhere in your scratch space
 #  This is a necessary step as compute nodes cannot write to $HOME
@@ -36,8 +36,9 @@ export R_LIBS=/lustre/home/sejjng1/R/x86_64-pc-linux-gnu-library/4.2:$R_LIBS
 # Get the task ID
 TASK_ID=$SGE_TASK_ID
 
-R --no-save --args ${TASK_ID} ${SCENARIO_ID} < /home/sejjng1/Scratch/bmcm/cluster_script.R
-#R --no-save < /home/sejjng1/Scratch/bmcm/cluster_script.R > myR_job.out
+# select for hierarchical or separate models:
+#R --no-save --args ${TASK_ID} ${SCENARIO_ID} < /home/sejjng1/Scratch/bmcm/cluster_script.R
+R --no-save --args ${TASK_ID} ${SCENARIO_ID} < /home/sejjng1/Scratch/bmcm/cluster_script_separate.R
 
 # Preferably, tar-up (archive) all output files onto the shared scratch area
 #tar -zcvf $HOME/Scratch/R_output/files_from_job_$JOB_ID.tar.gz $TMPDIR
