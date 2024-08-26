@@ -1,7 +1,8 @@
 # performance measures for
 # summary estimates for full probabilistic sampling
 # with samples data produced using the cluster
-
+# for either separate or hierarchical models
+#
 # see
 # Using simulation studies to evaluate statistical methods (2017) Tim Morris et al, Stats in Medicine
 
@@ -32,13 +33,17 @@ target_names <- c("rmst", "median", "cf")
 pm <- list()
 summary_dat <- list()
 
+# select
+model_type <- "separate"
+# model_type <- "hierarchical"
+
 # scenarios
 for (i in 1:n_scenario) {
   print(i)
   
   data <- scenario_data[i, ]
   
-  cluster_data_dir <- glue::glue("output_data/cluster/output_folders/scenario_{i}/")
+  cluster_data_dir <- glue::glue("output_data/cluster/output_folders/{model_type}/scenario_{i}/")
   
   # input data
   true_vals_filenames <- dir(path = cluster_data_dir,
@@ -51,6 +56,7 @@ for (i in 1:n_scenario) {
   stan_out <- lapply(stan_filenames, \(x) read.csv(x))
   
   # clean column names
+  # because treatments are the same so can combine
   stan_out <- 
     lapply(stan_out, \(x) {
       # remove the .number. from the column names
@@ -84,22 +90,22 @@ for (i in 1:n_scenario) {
 
 pm
 
-save(pm, file = glue::glue("data/performance_measures_cluster.RData"))
-save(summary_dat, file = glue::glue("data/summary_data_cluster.RData"))
+save(pm, file = glue::glue("data/performance_measures_cluster_{model_type}.RData"))
+save(summary_dat, file = glue::glue("data/summary_data_cluster_{model_type}.RData"))
 
 
 ########
 # plots
 
-load("data/performance_measures_cluster.RData")
-load("data/summary_data_cluster.RData")
+load(glue::glue("data/performance_measures_cluster_{model_type}.RData"))
+load(glue::glue("data/summary_data_cluster_{model_type}.RData"))
 
 ##########################
 # histograms of theta_hat
 
 # target <- "rmst"
-# target <- "cf"
-target <- "median"
+target <- "cf"
+# target <- "median"
 
 # endp <- 1
 endp <- 2
@@ -125,10 +131,9 @@ plot_list <- map(
 
 patchwork::wrap_plots(plot_list, ncol = 4)
 
-ggsave(filename = glue::glue("plots/theta_hat_hist_{target}_endpoint{endp}.png"),
+ggsave(filename = glue::glue("plots/theta_hat_hist_{target}_endpoint{endp}_{model_type}.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
 
-##TODO:
 #######################
 # zip plot of coverage
 
@@ -169,7 +174,7 @@ plot_list <-
 
 patchwork::wrap_plots(plot_list, ncol = 4)
 
-ggsave(filename = glue::glue("plots/zip_pop_{target}_endpoint{endp}.png"),
+ggsave(filename = glue::glue("plots/zip_pop_{target}_endpoint{endp}_{model_type}.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
 
 plot_list <- 
@@ -184,20 +189,20 @@ plot_list <-
 
 patchwork::wrap_plots(plot_list, ncol = 4)
 
-ggsave(filename = glue::glue("plots/zip_pop_mean_{target}_endpoint{endp}.png"),
+ggsave(filename = glue::glue("plots/zip_pop_mean_{target}_endpoint{endp}_{model_type}.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
 
 ################
 # lollipop plots
 
 # target <- "rmst"
-# target <- "cf"
-target <- "median"
+target <- "cf"
+# target <- "median"
 
-# quo_measure <- quo(bias)
+quo_measure <- quo(bias)
 # quo_measure <- quo(relative_bias)
 # quo_measure <- quo(coverage)
-quo_measure <- quo(empirical_se)
+# quo_measure <- quo(empirical_se)
 
 # extract target data and combine scenarios
 plot_dat <- pm |> 
@@ -235,7 +240,7 @@ plot_dat |>
 # ylim(0, ifelse(target == "rmst", 10, 
 #                ifelse(target == "median" & measure == "empirical_se", 5, NA)))
 
-ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}.png"),
+ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}_{model_type}.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
 
 # all performance measures on single plot
@@ -255,8 +260,17 @@ plot_long |>
   theme_bw() +
   xlab("Endpoint ID")
 
-ggsave(filename = glue::glue("plots/lollipop_cf_priors_{target}_data_scenario_1.png"),
+ggsave(filename = glue::glue("plots/lollipop_cf_priors_{target}_data_scenario_1_{model_type}.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
+
+###################
+# pair scatter plot
+##TODO:
+# load(glue::glue("data/summary_data_cluster.RData"))
+# summary_dat_hier <- summary_dat
+# load(glue::glue("data/summary_data_cluster_separate.RData"))
+# summary_dat_sep <- summary_dat
+
 
 
 #########
@@ -326,7 +340,7 @@ output_table <-
 # kable_styling(latex_options = c("striped", "hold_position"))
 
 # save
-write.csv(rmst_tab, file = "output_data/rmst_table.csv", row.names = FALSE)
-write.csv(cf_tab, file = "output_data/cf_table.csv", row.names = FALSE)
-write.csv(median_tab, file = "output_data/median_table.csv", row.names = FALSE)
+write.csv(rmst_tab, file = glue::glue("output_data/rmst_table_{model_type}.csv"), row.names = FALSE)
+write.csv(cf_tab, file = glue::glue("output_data/cf_table_{model_type}.csv"), row.names = FALSE)
+write.csv(median_tab, file = glue::glue("output_data/median_table_{model_type}.csv"), row.names = FALSE)
 
