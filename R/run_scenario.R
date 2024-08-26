@@ -1,6 +1,9 @@
 
-# obtain posterior samples for a single simulated data set
-#
+#' run_scenario
+#' 
+#' obtain posterior samples for a single simulated data set
+#' @param x sample number
+#'
 run_scenario <- function(x, sim_params, bmcm_params, dir = "", seed = NULL) {
   set.seed(seed)
   

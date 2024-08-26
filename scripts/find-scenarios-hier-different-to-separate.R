@@ -11,7 +11,25 @@ library(ggplot2)
 
 
 # scenario_data
-data <- 
+data <- ##TODO:
+
+latent_params_true <- eval(parse(text = data$latent_params_true))
+
+prior_cure_hier <- 
+  list(mu_alpha = rep(data$mu_cf_prior, 2),
+       sigma_alpha = rep(data$sigma_cf_prior, 2),
+       mu_sd_cf = rep(data$mu_sd_cf_prior, 2),
+       sigma_sd_cf = rep(data$sigma_sd_cf_prior, 2))
+
+# prior parameters for each cure fraction
+# duplicate for each treatment
+total_sigma <- data$sigma_cf_prior + data$mu_sd_cf_prior
+prior_cure_sep <- 
+  rep(list(mu_alpha = rep(data$mu_cf_prior, 2),
+           sigma_alpha = rep(total_sigma, 2)), data$n_endpoints)
+
+names(prior_cure_sep) <-
+  paste0(names(prior_cure_sep), "_", rep(1:data$n_endpoints, each = 2))
 
 sim_params <-
   list(
@@ -31,11 +49,7 @@ bmcm_params_hier <-
     formula = "Surv(time=times, event=status) ~ 1",
     cureformula = "~ tx + (1 | endpoint)",
     family_latent = data$family_latent_model,
-    prior_cure =   
-      list(mu_alpha = rep(data$mu_cf_prior, 2),
-           sigma_alpha = rep(data$sigma_cf_prior, 2),
-           mu_sd_cf = rep(data$mu_sd_cf_prior, 2),
-           sigma_sd_cf = rep(data$sigma_sd_cf_prior, 2)),
+    prior_cure = prior_cure_hier,
     centre_coefs = TRUE,
     bg_model = "bg_fixed",
     bg_varname = "rate",
@@ -48,11 +62,7 @@ bmcm_params_sep <-
     formula = "Surv(time=times, event=status) ~ 1",
     cureformula = "~ tx + endpoint",
     family_latent = data$family_latent_model,
-    prior_cure =   
-      list(mu_alpha = rep(data$mu_cf_prior, 2),
-           sigma_alpha = rep(data$sigma_cf_prior, 2),
-           mu_sd_cf = rep(data$mu_sd_cf_prior, 2),
-           sigma_sd_cf = rep(data$sigma_sd_cf_prior, 2)),
+    prior_cure = prior_cure_sep,
     centre_coefs = TRUE,
     bg_model = "bg_fixed",
     bg_varname = "rate",
@@ -67,6 +77,8 @@ dummy_sample$rate <- 10^(-10)
 dummy_sample <- 
   mutate(dummy_sample, tx = 1) |> 
   rbind(mutate(dummy_sample, tx = 2))
+
+# precompiled models
 
 stan_model_hier <- 
   precompile_bmcm_model(
@@ -87,7 +99,7 @@ stan_model_sep <-
 bmcm_params_hier$precompiled_model_path <- stan_model_hier$exe_file()
 bmcm_params_sep$precompiled_model_path <- stan_model_sep$exe_file()
 
-# run the simulation
+# run simulations
 
 run_scenario(1, sim_params, bmcm_params_hier)
 run_scenario(1, sim_params, bmcm_params_sep)
