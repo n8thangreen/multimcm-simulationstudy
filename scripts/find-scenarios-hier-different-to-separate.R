@@ -114,16 +114,44 @@ bmcm_params_sep$precompiled_model_path <- stan_model_sep$exe_file()
 
 # run simulations
 
-run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = TRUE)
-run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = TRUE)
+run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = F)
+run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = F)
 
 
 ########
 # plots
 
-stan_out_hier <- readRDS(here::here("output_data/hierarchical/samples_1.RDS"))
-stan_out_sep <- readRDS(here::here("output_data/separate/samples_1.RDS"))
+# stan_out_hier <- readRDS(here::here("output_data/hierarchical/samples_1.RDS"))
+# stan_out_sep <- readRDS(here::here("output_data/separate/samples_1.RDS"))
+stan_out_hier <- read.csv(here::here("output_data/hierarchical/samples_1.csv"))
+stan_out_sep <- read.csv(here::here("output_data/separate/samples_1.csv"))
 
-plot_S_joint(stan_out_hier) + xlim(0,5) + facet_wrap(vars(endpoint))
-plot_S_joint(stan_out_sep) + xlim(0,5) + facet_wrap(vars(endpoint))
+stan_out_hier_true <- read.csv(here::here("output_data/hierarchical/true_values_1.csv"))
+stan_out_sep_true <- read.csv(here::here("output_data/separate/true_values_1.csv"))
 
+param_names <- names(stan_out_sep)
+cf_names <- param_names[-1]  # cure fractions
+cf_names <- cf_names[!grepl(pattern = "2\\.$", cf_names)]
+
+plot_list <- list()
+
+for (i in cf_names) {
+  # Combine the data into a single data frame
+  df <- data.frame(
+    value = c(stan_out_hier[, i], stan_out_sep[, i]),
+    group = factor(rep(c("hier", "sep"), each = 500))
+  )
+  
+  parts <- strsplit(i, "\\.|_")[[1]]
+  
+  # Plot using ggplot2
+  plot_list[[i]] <- 
+    ggplot(df, aes(x = value, fill = group)) +
+    geom_histogram(aes(y = ..density..), position = "identity", alpha = 0.5, bins = 30) +
+    geom_density(alpha = 0.7) +
+    labs(title = i, x = "Value", y = "Density") +
+    geom_vline(xintercept = stan_out_hier_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1.5) +
+    theme_minimal()
+}
+
+do.call(gridExtra::grid.arrange, c(plot_list, nrow = 3, ncol = 3))
