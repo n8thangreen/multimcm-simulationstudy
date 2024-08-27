@@ -114,15 +114,15 @@ bmcm_params_sep$precompiled_model_path <- stan_model_sep$exe_file()
 
 # run simulations
 
-run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/")
-run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/")
+run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = TRUE)
+run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = TRUE)
 
 
 ########
 # plots
 
-stan_out_hier <- read.csv(here::here("output_data/hierarchical/samples_1.csv"))
-stan_out_sep <- read.csv(here::here("output_data/separate/samples_1.csv"))
+stan_out_hier <- readRDS(here::here("output_data/hierarchical/samples_1.RDS"))
+stan_out_sep <- readRDS(here::here("output_data/separate/samples_1.RDS"))
 
 plot_S_joint(stan_out_hier) + xlim(0,5) + facet_wrap(vars(endpoint))
 plot_S_joint(stan_out_sep) + xlim(0,5) + facet_wrap(vars(endpoint))

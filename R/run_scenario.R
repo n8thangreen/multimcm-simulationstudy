@@ -35,11 +35,19 @@ run_scenario <- function(x, sim_params, bmcm_params,
   samples <- extract_params(fit$output, pattern = "^(median|rmst|cf)", rstan_format) 
   
   # save to file
-  path_name <- paste0(dir, "samples_", x, ".csv")
-  write.csv(samples, file = path_name)
-  
-  input_data_path <- paste0(dir, "true_values_", x, ".csv")
-  write.csv(true_values, file = input_data_path)
+  if (rstan_format) {
+    path_name <- paste0(dir, "samples_", x, ".RDS")
+    saveRDS(samples, file = path_name)
+    
+    input_data_path <- paste0(dir, "true_values_", x, ".RDS")
+    saveRDS(true_values, file = input_data_path)
+  } else {
+    path_name <- paste0(dir, "samples_", x, ".csv")
+    write.csv(samples, file = path_name)
+    
+    input_data_path <- paste0(dir, "true_values_", x, ".csv")
+    write.csv(true_values, file = input_data_path)
+  }
   
   return()
 }
