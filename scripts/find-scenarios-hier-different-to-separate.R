@@ -23,8 +23,9 @@ data <- data.frame(
   sigma_true = 0.4,
   family_latent_true = "weibull",
   family_latent_model = "weibull",
-  prop_censoring = 0.5,
-  latent_params_true = "list(list(shape = 1, scale = 1), list(shape = 1, scale = 0.1))")
+  prop_censoring = 0,
+  latent_params_true =
+    "list(list(shape = 1, scale = 5), list(shape = 1, scale = 0.5))")  # scale is 1/rate
 
 latent_params_true <- eval(parse(text = data$latent_params_true))
 

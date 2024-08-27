@@ -37,29 +37,34 @@ lognormal_median_cf <- function(mu, sigma, cf) {
   exp(mu)
 }
 
-## rmst
-
 # restricted mean survival time
+
 exp_rmst <- function (rate, tmax) {
   (1 - exp(- rate * tmax))/rate
 }
 
-# restricted mean survival time
-weibull_rmst <- function (shape, scale, tmax) {
-  scale^(-1/shape) * pgamma(scale*tmax^shape, 1/shape + 1) + tmax*exp(-scale*tmax^shape)
+## not confident of closed form solution
+# weibull_rmst <- function (shape, scale, tmax) {
+#   scale^(-1/shape) * pgamma(scale*tmax^shape, 1/shape + 1) + tmax*exp(-scale*tmax^shape)
+# }
+
+weibull_rmst <- function(shape, scale, tmax) {
+
+  surv_function <- function(t) {
+    exp(- (t / scale)^shape)
+  }
+  
+  integrate(surv_function, lower = 0, upper = tmax)$value
 }
 
-# restricted mean survival time
 gompertz_rmst <- function (shape, scale, tmax) {
   1/scale * (log(1 + shape/scale *(1 - exp(-scale*tmax))) - shape/scale*(1 - exp(-scale*tmax)))
 }
 
-# restricted mean survival time
-loglogistic_rmst <- function (scale, shape, tmax) {
+loglogistic_rmst <- function (shape, scale, tmax) {
   exp(-scale/shape) * inc_beta(exp(scale)*tmax^shape/(1 + exp(scale)*tmax^shape), 1 + 1/shape, 1 - 1/shape) + tmax*1/(1 + exp(scale)*tmax^shape)
 }
 
-# restricted mean survival time
 lognormal_rmst <- function (mu, sigma, tmax) {
   exp(mu + (sigma^2)/2) * Phi((log(tmax) - mu - sigma^2)/sigma) + tmax*(1 - Phi((log(tmax) - mu)/sigma))
 }
@@ -71,22 +76,18 @@ exp_rmst_cf <- function (rate, tmax, cf) {
   cf*tmax + (1 - cf)*exp_rmst(rate, tmax)
 }
 
-# restricted mean survival time
 weibull_rmst_cf <- function (shape, scale, tmax, cf) {
   cf*tmax + (1 - cf)*weibull_rmst(shape, scale, tmax)
 }
 
-# restricted mean survival time
 gompertz_rmst_cf <- function (shape, scale, tmax, cf) {
   cf*tmax + (1 - cf)*gompertz_rmst(shape, scale, tmax)
 }
 
-# restricted mean survival time
-loglogistic_rmst_cf <- function (scale, shape, tmax, cf) {
-  cf*tmax + (1 - cf)*loglogistic_rmst(scale, shape, tmax)
+loglogistic_rmst_cf <- function (shape, scale, tmax, cf) {
+  cf*tmax + (1 - cf)*loglogistic_rmst(shape, scale, tmax)
 }
 
-# restricted mean survival time
 lognormal_rmst_cf <- function (mu, sigma, tmax, cf) {
   cf*tmax + (1 - cf)*lognormal_rmst(mu, sigma, tmax)
 }
