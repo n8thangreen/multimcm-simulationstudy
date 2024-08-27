@@ -99,7 +99,7 @@ stan_model_hier <-
     family_latent = bmcm_params_hier$family_latent,
     cureformula = bmcm_params_hier$cureformula,
     use_cmdstanr = TRUE,
-    file_path = here::here("stan"))
+    file_path = here::here("stan/hierarchical"))
 
 stan_model_sep <- 
   precompile_bmcm_model(
@@ -107,22 +107,22 @@ stan_model_sep <-
     family_latent = bmcm_params_sep$family_latent,
     cureformula = bmcm_params_sep$cureformula,
     use_cmdstanr = TRUE,
-    file_path = here::here("stan"))
+    file_path = here::here("stan/separate"))
 
 bmcm_params_hier$precompiled_model_path <- stan_model_hier$exe_file()
 bmcm_params_sep$precompiled_model_path <- stan_model_sep$exe_file()
 
 # run simulations
 
-run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical")
-run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate")
+run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/")
+run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/")
 
 
 ########
 # plots
 
-stan_out_hier <- read.csv()
-stan_out_sep <- read.csv()
+stan_out_hier <- read.csv(here::here("output_data/hierarchical/samples_1.csv"))
+stan_out_sep <- read.csv(here::here("output_data/separate/samples_1.csv"))
 
 plot_S_joint(stan_out_hier) + xlim(0,5) + facet_wrap(vars(endpoint))
 plot_S_joint(stan_out_sep) + xlim(0,5) + facet_wrap(vars(endpoint))
