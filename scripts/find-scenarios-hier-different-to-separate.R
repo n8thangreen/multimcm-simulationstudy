@@ -11,7 +11,20 @@ library(ggplot2)
 
 
 # scenario_data
-data <- ##TODO:
+data <- data.frame(
+  nsample = 100,
+  n_endpoints = 3,
+  t_cutpoint = 5,
+  mu_cf_prior = -1.39,
+  sigma_cf_prior = 0.2,
+  mu_sd_cf_prior = 0.4,
+  sigma_sd_cf_prior = 2.5,
+  cf_true = -1.39,
+  sigma_true = 0.4,
+  family_latent_true = "weibull",
+  family_latent_model = "weibull",
+  prop_censoring = 0.5,
+  latent_params_true = "list(list(shape = 1, scale = 1), list(shape = 1, scale = 0.1))")
 
 latent_params_true <- eval(parse(text = data$latent_params_true))
 
@@ -101,11 +114,16 @@ bmcm_params_sep$precompiled_model_path <- stan_model_sep$exe_file()
 
 # run simulations
 
-run_scenario(1, sim_params, bmcm_params_hier)
-run_scenario(1, sim_params, bmcm_params_sep)
+run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical")
+run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate")
 
 
+########
+# plots
 
+stan_out_hier <- read.csv()
+stan_out_sep <- read.csv()
 
-
+plot_S_joint(stan_out_hier) + xlim(0,5) + facet_wrap(vars(endpoint))
+plot_S_joint(stan_out_sep) + xlim(0,5) + facet_wrap(vars(endpoint))
 
