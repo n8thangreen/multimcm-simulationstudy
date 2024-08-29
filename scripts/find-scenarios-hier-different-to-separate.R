@@ -26,11 +26,20 @@ n <- 100
 shape <- rgamma(n, shape = 2, scale = 1)
 scale <- rlnorm(n, meanlog = 0.6, sdlog = 0.5)
 
+density(shape) |> plot()
+density(scale) |> plot()
+
 plot(NULL, ylim = c(0,1), xlim = c(0,5))
 for (i in 1:n) {
   pweibull(q = seq(0,5,0.1), shape = shape[i], scale = scale[i], lower.tail = F) |> 
     lines(x = seq(0,5,0.1), col = "grey")
 }
+
+# true survival curves
+pweibull(q = seq(0,5,0.1), shape = 1, scale = 4, lower.tail = F) |> 
+    plot(x = seq(0,5,0.1), col = "red", xlim = c(0,5), ylim = c(0,1), type = "l")
+pweibull(q = seq(0,5,0.1), shape = 1, scale = 1, lower.tail = F) |> 
+    lines(x = seq(0,5,0.1))
 
 #############
 # analysis
@@ -51,9 +60,9 @@ data <- data.frame(
   prop_censoring = 0,
   latent_params_true =
     "list(list(shape = 1, scale = 4), list(shape = 1, scale = 1))",  # scale is 1/rate
-  a_shape_latent_prior = 2,   # gamma on shape
+  a_shape_latent_prior = 2,       # gamma on shape
   b_shape_latent_prior = 1,
-  mu_S_prior = 0.6,           # log-normal on scale
+  mu_S_prior = 0.6,               # log-normal on scale
   sigma_S_prior = 0.5)  
 
 latent_params_true <- eval(parse(text = data$latent_params_true))
@@ -79,8 +88,8 @@ names(prior_cure_sep) <-
 prior_latent_list <- 
   rep(list(a_shape = data$a_shape_latent_prior,
            b_shape = data$b_shape_latent_prior,
-           mu_S = data$mu_S_prior,
-           sigma_S = data$sigma_S_prior), data$n_endpoints)
+           mu_S = as.array(data$mu_S_prior),
+           sigma_S = as.array(data$sigma_S_prior)), data$n_endpoints)
 names(prior_latent_list) <-
   paste0(names(prior_latent_list), "_", rep(1:data$n_endpoints, each = 4))
 
@@ -156,8 +165,8 @@ bmcm_params_sep$precompiled_model_path <- stan_model_sep$exe_file()
 
 # run simulations
 
-run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = F)
-run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = F)
+run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = FALSE)
+run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = FALSE)
 
 
 ########
@@ -192,8 +201,8 @@ for (i in cf_names) {
     geom_histogram(aes(y = ..density..), position = "identity", alpha = 0.5, bins = 30) +
     geom_density(alpha = 0.7) +
     labs(title = i, x = "Value", y = "Density") +
-    geom_vline(xintercept = stan_out_hier_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1.5) +
-    geom_vline(xintercept = stan_out_sep_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1.5) +
+    geom_vline(xintercept = stan_out_hier_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1, col = "red") +
+    geom_vline(xintercept = stan_out_sep_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1) +
     theme_minimal()
 }
 
