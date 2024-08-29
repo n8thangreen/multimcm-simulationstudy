@@ -17,9 +17,39 @@ invlogit <- function(x) {
   exp(x) / (1 + exp(x))
 }
 
+#
+truncated_cauchy <- function(n, location, scale, a) {
+  samples <- numeric(n)
+  i <- 1
+  while (i <= n) {
+    x <- rcauchy(1, location, scale)
+    if (x > a) {
+      samples[i] <- x
+      i <- i + 1
+    }
+  }
+  samples
+}
+
 # cure fraction
-invlogit(rnorm(1000, -1.39, 0.4)) |> 
+## true
+invlogit(rnorm(1000, -1.39, 0.1)) |> 
   density() |> plot()
+
+## prior
+n <- 10000
+mu <- rnorm(n, mean = -1.39, sd = 0.1)
+mu_cf <- invlogit(mu)
+sd <- truncated_cauchy(n, location = 0.15, scale = 0.1, 0)
+sd <- sd[sd<10]
+
+density(mu) |> plot()
+density(mu_cf) |> plot()
+density(sd) |> plot()
+
+invlogit(rnorm(n = n, mean = mu, sd = sd)) |> 
+  density() |> plot(xlim = c(0,0.5))
+
 
 # latent survival
 n <- 100
@@ -46,20 +76,21 @@ pweibull(q = seq(0,5,0.1), shape = 1, scale = 1, lower.tail = F) |>
 
 # scenario_data
 data <- data.frame(
-  nsample = 500,
-  n_endpoints = 3,
+  nsample = 10,
+  n_endpoints = 10,
   t_cutpoint = 5,
   mu_cf_prior = -1.39,
   sigma_cf_prior = 0.1,
-  mu_sd_cf_prior = 0.1,
-  sigma_sd_cf_prior = 0.5,
+  mu_sd_cf_prior = 0.15,
+  sigma_sd_cf_prior = 0.1,
   cf_true = -1.39,
   sigma_true = 0.1,
   family_latent_true = "weibull",
   family_latent_model = "weibull",
   prop_censoring = 0,
   latent_params_true =
-    "list(list(shape = 1, scale = 4), list(shape = 1, scale = 1))",  # scale is 1/rate
+    "list(list(shape = 1, scale = 1))",
+    # "list(list(shape = 1, scale = 4), list(shape = 1, scale = 1))",  # scale is 1/rate
   a_shape_latent_prior = 2,       # gamma on shape
   b_shape_latent_prior = 1,
   mu_S_prior = 0.6,               # log-normal on scale
@@ -207,3 +238,8 @@ for (i in cf_names) {
 }
 
 do.call(gridExtra::grid.arrange, c(plot_list, nrow = 3, ncol = data$n_endpoints))
+
+# separate measures
+do.call(gridExtra::grid.arrange, c(plot_list[1:data$n_endpoints], nrow = 3, ncol = ceiling(data$n_endpoints/3)))
+do.call(gridExtra::grid.arrange, c(plot_list[(data$n_endpoints+1):(2*data$n_endpoints)], nrow = 3, ncol = ceiling(data$n_endpoints/3)))
+do.call(gridExtra::grid.arrange, c(plot_list[(2*data$n_endpoints+1):(3*data$n_endpoints)], nrow = 3, ncol = ceiling(data$n_endpoints/3)))
