@@ -165,8 +165,8 @@ bmcm_params_sep$precompiled_model_path <- stan_model_sep$exe_file()
 
 # run simulations
 
-run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = FALSE)
-run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = FALSE)
+run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = FALSE, seed = 1234)
+run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = FALSE, seed = 1234)
 
 
 ########
