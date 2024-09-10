@@ -3,11 +3,13 @@
 \name{bmcm_performance_measures_N}
 \alias{bmcm_performance_measures_N}
 \title{statistics for all endpoints
-for full probabilistic analysis}
+for full probabilistic analysis
+computed locally}
 \usage{
 bmcm_performance_measures_N(stan_out_list, par_nm, true_vals, append = TRUE)
 }
 \description{
 statistics for all endpoints
 for full probabilistic analysis
+computed locally
 }

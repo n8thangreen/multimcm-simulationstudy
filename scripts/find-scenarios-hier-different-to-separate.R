@@ -12,15 +12,15 @@ library(ggplot2)
 
 # scenario_data
 data <- data.frame(
-  nsample = 100,
-  n_endpoints = 3,
+  nsample = 500,
+  n_endpoints = 10,
   t_cutpoint = 5,
   mu_cf_prior = -1.39,
   sigma_cf_prior = 0.2,
   mu_sd_cf_prior = 0.4,
   sigma_sd_cf_prior = 2.5,
   cf_true = -1.39,
-  sigma_true = 0.4,
+  sigma_true = 0.1,
   family_latent_true = "weibull",
   family_latent_model = "weibull",
   prop_censoring = 0.5,
@@ -144,14 +144,19 @@ for (i in cf_names) {
   
   parts <- strsplit(i, "\\.|_")[[1]]
   
-  # Plot using ggplot2
   plot_list[[i]] <- 
     ggplot(df, aes(x = value, fill = group)) +
     geom_histogram(aes(y = ..density..), position = "identity", alpha = 0.5, bins = 30) +
     geom_density(alpha = 0.7) +
     labs(title = i, x = "Value", y = "Density") +
-    geom_vline(xintercept = stan_out_hier_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1.5) +
+    geom_vline(xintercept = stan_out_hier_true[parts[2], parts[1]], linetype = "dashed", col = "red", linewidth = 1.5) +
+    geom_vline(xintercept = stan_out_sep_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1.5) +
     theme_minimal()
 }
 
-do.call(gridExtra::grid.arrange, c(plot_list, nrow = 3, ncol = 3))
+do.call(gridExtra::grid.arrange, c(plot_list, nrow = 3, ncol = data$n_endpoints))
+
+plot_list <- plot_list[sort(cf_names)]
+do.call(gridExtra::grid.arrange, c(plot_list[1:10], nrow = 3, ncol = 4))
+do.call(gridExtra::grid.arrange, c(plot_list[11:20], nrow = 3, ncol = 4))
+do.call(gridExtra::grid.arrange, c(plot_list[21:30], nrow = 3, ncol = 4))
