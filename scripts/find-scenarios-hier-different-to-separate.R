@@ -38,18 +38,19 @@ invlogit(rnorm(1000, -1.39, 0.1)) |>
 
 ## prior
 n <- 10000
-mu <- rnorm(n, mean = -1.39, sd = 0.1)
-mu_cf <- invlogit(mu)
-sd <- truncated_cauchy(n, location = 0.15, scale = 0.1, 0)
+mu <- rnorm(n, mean = -1, sd = 0.5)  #sd = 0.1
+mu_cf <- invlogit(mu)     # global cure fraction
+sd <- truncated_cauchy(n, location = 0.15, scale = 0.5, 0)  # between-group
 sd <- sd[sd<10]
 
 density(mu) |> plot()
 density(mu_cf) |> plot()
 density(sd) |> plot()
 
-invlogit(rnorm(n = n, mean = mu, sd = sd)) |> 
-  density() |> plot(xlim = c(0,0.5))
-
+# group-level cure fraction
+rnorm(n = n, mean = mu, sd = sd) |>
+  invlogit() |> 
+  density() |> plot(xlim = c(0, 1))
 
 # latent survival
 n <- 100
@@ -79,10 +80,10 @@ data <- data.frame(
   nsample = 10,
   n_endpoints = 10,
   t_cutpoint = 5,
-  mu_cf_prior = -1.39,
-  sigma_cf_prior = 0.1,
+  mu_cf_prior = -1,
+  sigma_cf_prior = 0.5,
   mu_sd_cf_prior = 0.15,
-  sigma_sd_cf_prior = 0.1,
+  sigma_sd_cf_prior = 0.5,
   cf_true = -1.39,
   sigma_true = 0.1,
   family_latent_true = "weibull",
@@ -106,10 +107,22 @@ prior_cure_hier <-
 
 # prior parameters for each cure fraction
 # duplicate for each treatment
-total_sigma <- data$sigma_cf_prior + data$mu_sd_cf_prior
-prior_cure_sep <- 
+total_sigma <- sqrt(data$sigma_cf_prior^2 + data$mu_sd_cf_prior^2 + data$sigma_sd_cf_prior^2)
+
+# # check apprximately equivalent to hierarchical
+# rnorm(n = n, mean = mu, sd = sd) |>
+#   density() |> plot()
+# rnorm(n = n, mean = -1, sd = total_sigma) |> 
+#   density() |> lines(col = "red")
+
+prior_cure_sep <-
   rep(list(mu_alpha = rep(data$mu_cf_prior, 2),
            sigma_alpha = rep(total_sigma, 2)), data$n_endpoints)
+
+# ## for testing
+# prior_cure_sep <- 
+#   rep(list(mu_alpha = rep(0, 2),
+#            sigma_alpha = rep(2, 2)), data$n_endpoints)
 
 names(prior_cure_sep) <-
   paste0(names(prior_cure_sep), "_", rep(1:data$n_endpoints, each = 2))
@@ -196,8 +209,8 @@ bmcm_params_sep$precompiled_model_path <- stan_model_sep$exe_file()
 
 # run simulations
 
-run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = FALSE, seed = 1234)
-run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = FALSE, seed = 1234)
+run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = FALSE) #, seed = 1234)
+run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = FALSE) #, seed = 1234)
 
 
 ########
@@ -215,6 +228,10 @@ stan_out_sep_true <- read.csv(here::here("output_data/separate/true_values_1.csv
 param_names <- names(stan_out_sep)
 cf_names <- param_names[-1]  # remove row number
 cf_names <- sort(cf_names[!grepl(pattern = "2\\.$", cf_names)])
+
+# cure fraction separate prior
+cf_sep_lin <- rnorm(n = 10000, mean = data$mu_cf_prior, sd = total_sigma)
+cf_data <- data.frame(cf_sep = invlogit(cf_sep_lin))
 
 plot_list <- list()
 
@@ -234,13 +251,28 @@ for (i in cf_names) {
     labs(title = i, x = "Value", y = "Density") +
     geom_vline(xintercept = stan_out_hier_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1, col = "red") +
     geom_vline(xintercept = stan_out_sep_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1) +
-    theme_minimal()
+    theme_minimal() +
+    # cure fraction priors
+    geom_density(data = cf_data, aes(x = cf_sep), alpha = 0.7, inherit.aes = FALSE, col = "green")
 }
 
 do.call(gridExtra::grid.arrange, c(plot_list, nrow = 3, ncol = data$n_endpoints))
 
+# posterior of hierarchical cure fraction sd
+sd_data <- data.frame(sd = sd)  # prior
+
+ggplot(data = stan_out_hier, aes(x = sd_cf.2.)) +
+  geom_histogram(aes(y = ..density..), position = "identity", alpha = 0.5, bins = 30) +
+  geom_density(alpha = 0.7) +
+  geom_density(data = sd_data, aes(x = sd), alpha = 0.7, inherit.aes = FALSE, col = "red") +
+  theme_minimal() +
+  xlim(0, 1)
+
+
+# plot by target statistic
 plot_list <- plot_list[sort(cf_names)]
-do.call(gridExtra::grid.arrange, c(plot_list[1:10], nrow = 3, ncol = 4))
-do.call(gridExtra::grid.arrange, c(plot_list[11:20], nrow = 3, ncol = 4))
-do.call(gridExtra::grid.arrange, c(plot_list[21:30], nrow = 3, ncol = 4))
+
+do.call(gridExtra::grid.arrange, c(plot_list[1:10], nrow = 3))
+do.call(gridExtra::grid.arrange, c(plot_list[11:20], nrow = 3))
+do.call(gridExtra::grid.arrange, c(plot_list[21:30], nrow = 3))
 

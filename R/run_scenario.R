@@ -32,7 +32,9 @@ run_scenario <- function(x, sim_params, bmcm_params,
   # fit model
   fit <- do.call(bmcm_stan, bmcm_input)
   
-  samples <- extract_params(fit$output, pattern = "^(median|rmst|cf)", rstan_format) 
+  # samples <- extract_params(fit$output, pattern = "^(median|rmst|cf)", rstan_format)
+  ## for testing
+  samples <- extract_params(fit$output, pattern = "^(median|rmst|cf|sd_cf)", rstan_format)
   
   # save to file
   if (rstan_format) {
