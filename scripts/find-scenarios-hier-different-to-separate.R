@@ -53,15 +53,15 @@ rnorm(n = n, mean = mu, sd = sd) |>
   density() |> plot(xlim = c(0, 1))
 
 # latent survival
-n <- 100
-shape <- rgamma(n, shape = 2, scale = 1)
-scale <- rlnorm(n, meanlog = 0.6, sdlog = 0.5)
+n <- 10000
+shape <- rgamma(n, shape = 3, scale = 2)
+scale <- rlnorm(n, meanlog = 1, sdlog = 0.6)
 
 density(shape) |> plot()
 density(scale) |> plot()
 
 plot(NULL, ylim = c(0,1), xlim = c(0,5))
-for (i in 1:n) {
+for (i in 1:100) {
   pweibull(q = seq(0,5,0.1), shape = shape[i], scale = scale[i], lower.tail = F) |> 
     lines(x = seq(0,5,0.1), col = "grey")
 }
@@ -91,11 +91,13 @@ data <- data.frame(
   prop_censoring = 0,
   latent_params_true =
     "list(list(shape = 1, scale = 1))",
-    # "list(list(shape = 1, scale = 4), list(shape = 1, scale = 1))",  # scale is 1/rate
-  a_shape_latent_prior = 2,       # gamma on shape
-  b_shape_latent_prior = 1,
-  mu_S_prior = 0.6,               # log-normal on scale
-  sigma_S_prior = 0.5)  
+    # "list(
+    #  list(shape = 1, scale = 4),
+    #  list(shape = 1, scale = 1))",  # scale is 1/rate
+  a_shape_latent_prior = 3,         # gamma on shape
+  b_shape_latent_prior = 2,
+  mu_S_prior = 1,                   # log-normal on scale
+  sigma_S_prior = 0.6)  
 
 latent_params_true <- eval(parse(text = data$latent_params_true))
 
@@ -209,9 +211,17 @@ bmcm_params_sep$precompiled_model_path <- stan_model_sep$exe_file()
 
 # run simulations
 
-run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = FALSE) #, seed = 1234)
-run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = FALSE) #, seed = 1234)
+run_scenario(1, sim_params, bmcm_params_hier, dir = "output_data/hierarchical/", rstan_format = FALSE,
+             iter_warmup = 200,
+             iter_sampling = 1000,
+             save_warmup = FALSE,
+             thin = 1) #, seed = 1234)
 
+run_scenario(1, sim_params, bmcm_params_sep, dir = "output_data/separate/", rstan_format = FALSE,
+             iter_warmup = 200,
+             iter_sampling = 1000,
+             save_warmup = FALSE,
+             thin = 1) #, seed = 1234)
 
 ########
 # plots
@@ -261,7 +271,7 @@ do.call(gridExtra::grid.arrange, c(plot_list, nrow = 3, ncol = data$n_endpoints)
 # posterior of hierarchical cure fraction sd
 sd_data <- data.frame(sd = sd)  # prior
 
-ggplot(data = stan_out_hier, aes(x = sd_cf.2.)) +
+ggplot(data = stan_out_hier, aes(x = sd_cf.1.)) +
   geom_histogram(aes(y = ..density..), position = "identity", alpha = 0.5, bins = 30) +
   geom_density(alpha = 0.7) +
   geom_density(data = sd_data, aes(x = sd), alpha = 0.7, inherit.aes = FALSE, col = "red") +

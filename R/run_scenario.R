@@ -4,12 +4,15 @@
 #' obtain posterior samples for a single simulated data set
 #' @param x sample number
 #' @param rstan_format list (rstan) or flat dataframe (cmdstanr) format; default FALSE
+#' @param ... additional arguments passed to \code{\link{bmcm_stan}}
 #'
 run_scenario <- function(x, sim_params, bmcm_params,
                          dir = "",
                          seed = NULL,
-                         rstan_format = FALSE) {
+                         rstan_format = FALSE,
+                         ...) {
   set.seed(seed)
+  dots <- list(...)
   
   # sample data set
   dat <- do.call(rsurv_cf, sim_params)
@@ -27,7 +30,7 @@ run_scenario <- function(x, sim_params, bmcm_params,
     mutate(dat, tx = 1) |> 
     rbind(mutate(dat, tx = 2))
   
-  bmcm_input <- c(input_data = list(dat), bmcm_params)
+  bmcm_input <- c(input_data = list(dat), bmcm_params, dots)
   
   # fit model
   fit <- do.call(bmcm_stan, bmcm_input)
