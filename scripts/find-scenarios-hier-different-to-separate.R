@@ -52,24 +52,27 @@ rnorm(n = n, mean = mu, sd = sd) |>
   invlogit() |> 
   density() |> plot(xlim = c(0, 1))
 
-# latent survival
+# latent survival curves
 n <- 10000
-shape <- rgamma(n, shape = 3, scale = 2)
-scale <- rlnorm(n, meanlog = 1, sdlog = 0.6)
+# shape <- rgamma(n, shape = 3, scale = 2)   # vague
+# scale <- rlnorm(n, meanlog = 1, sdlog = 0.6)
+
+shape <- rgamma(n, shape = 1000, scale = 0.001)   # very informative
+scale <- rlnorm(n, meanlog = 0, sdlog = 0.01)
 
 density(shape) |> plot()
 density(scale) |> plot()
 
 plot(NULL, ylim = c(0,1), xlim = c(0,5))
 for (i in 1:100) {
-  pweibull(q = seq(0,5,0.1), shape = shape[i], scale = scale[i], lower.tail = F) |> 
+  pweibull(q = seq(0,5,0.1), shape = shape[i], scale = scale[i], lower.tail = FALSE) |> 
     lines(x = seq(0,5,0.1), col = "grey")
 }
 
 # true survival curves
-pweibull(q = seq(0,5,0.1), shape = 1, scale = 4, lower.tail = F) |> 
-    plot(x = seq(0,5,0.1), col = "red", xlim = c(0,5), ylim = c(0,1), type = "l")
-pweibull(q = seq(0,5,0.1), shape = 1, scale = 1, lower.tail = F) |> 
+pweibull(q = seq(0,5,0.1), shape = 1, scale = 4, lower.tail = FALSE) |> 
+    plot(x = seq(0,5,0.1), col = "red", xlim = c(0,5), ylim = c(0, 1), type = "l")
+pweibull(q = seq(0,5,0.1), shape = 1, scale = 1, lower.tail = FALSE) |> 
     lines(x = seq(0,5,0.1))
 
 #############
@@ -77,7 +80,7 @@ pweibull(q = seq(0,5,0.1), shape = 1, scale = 1, lower.tail = F) |>
 
 # scenario_data
 data <- data.frame(
-  nsample = 10,
+  nsample = 100,
   n_endpoints = 10,
   t_cutpoint = 5,
   mu_cf_prior = -1,
@@ -94,10 +97,10 @@ data <- data.frame(
     # "list(
     #  list(shape = 1, scale = 4),
     #  list(shape = 1, scale = 1))",  # scale is 1/rate
-  a_shape_latent_prior = 3,         # gamma on shape
-  b_shape_latent_prior = 2,
-  mu_S_prior = 1,                   # log-normal on scale
-  sigma_S_prior = 0.6)  
+  a_shape_latent_prior = 1000,         # gamma on shape
+  b_shape_latent_prior = 0.001,
+  mu_S_prior = 0,                   # log-normal on scale
+  sigma_S_prior = 0.01)  
 
 latent_params_true <- eval(parse(text = data$latent_params_true))
 
@@ -276,7 +279,7 @@ ggplot(data = stan_out_hier, aes(x = sd_cf.1.)) +
   geom_density(alpha = 0.7) +
   geom_density(data = sd_data, aes(x = sd), alpha = 0.7, inherit.aes = FALSE, col = "red") +
   theme_minimal() +
-  xlim(0, 1)
+  xlim(0, 2)
 
 
 # plot by target statistic
