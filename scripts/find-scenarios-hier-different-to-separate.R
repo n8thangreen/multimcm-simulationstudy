@@ -33,15 +33,22 @@ truncated_cauchy <- function(n, location, scale, a) {
 
 # cure fraction
 ## true
-invlogit(rnorm(1000, -1.39, 0.1)) |> 
+invlogit(rnorm(1000, -1, 0.1)) |> 
   density() |> plot()
 
 ## prior
 n <- 10000
-mu <- rnorm(n, mean = -1, sd = 0.5)  #sd = 0.1
+
+# weakly informative
+mu <- rnorm(n, mean = -1, sd = 0.7)  #sd = 0.1
+# sd <- truncated_cauchy(n, location = 0.15, scale = 0.5, 0)  # between-group
+
+# # very informative
+# mu <- rnorm(n, mean = -1, sd = 0.01)
+sd <- truncated_cauchy(n, location = 0.05, scale = 0.05, 0)
+
 mu_cf <- invlogit(mu)     # global cure fraction
-sd <- truncated_cauchy(n, location = 0.15, scale = 0.5, 0)  # between-group
-sd <- sd[sd<10]
+sd <- sd[sd < 10]
 
 density(mu) |> plot()
 density(mu_cf) |> plot()
@@ -50,7 +57,8 @@ density(sd) |> plot()
 # group-level cure fraction
 rnorm(n = n, mean = mu, sd = sd) |>
   invlogit() |> 
-  density() |> plot(xlim = c(0, 1))
+  density() |>
+  plot(xlim = c(0, 1))
 
 # latent survival curves
 n <- 10000
@@ -71,38 +79,46 @@ for (i in 1:100) {
 
 # true survival curves
 pweibull(q = seq(0,5,0.1), shape = 1, scale = 4, lower.tail = FALSE) |> 
-    plot(x = seq(0,5,0.1), col = "red", xlim = c(0,5), ylim = c(0, 1), type = "l")
+  plot(x = seq(0,5,0.1), col = "red", xlim = c(0,5), ylim = c(0, 1), type = "l")
 pweibull(q = seq(0,5,0.1), shape = 1, scale = 1, lower.tail = FALSE) |> 
-    lines(x = seq(0,5,0.1))
+  lines(x = seq(0,5,0.1))
 
 #############
 # analysis
 
 # scenario_data
 data <- data.frame(
-  nsample = 100,
-  n_endpoints = 10,
+  nsample = 5,
+  n_endpoints = 3,
   t_cutpoint = 5,
   mu_cf_prior = -1,
-  sigma_cf_prior = 0.5,
-  mu_sd_cf_prior = 0.15,
-  sigma_sd_cf_prior = 0.5,
-  cf_true = -1.39,
+  sigma_cf_prior = 0.7,
+  mu_sd_cf_prior = 0.05,
+  sigma_sd_cf_prior = 0.05,
+  cf_true = -1,
   sigma_true = 0.1,
   family_latent_true = "weibull",
   family_latent_model = "weibull",
   prop_censoring = 0,
   latent_params_true =
     "list(list(shape = 1, scale = 1))",
-    # "list(
-    #  list(shape = 1, scale = 4),
-    #  list(shape = 1, scale = 1))",  # scale is 1/rate
-  a_shape_latent_prior = 1000,         # gamma on shape
-  b_shape_latent_prior = 0.001,
-  mu_S_prior = 0,                   # log-normal on scale
-  sigma_S_prior = 0.01)  
+  # "list(
+  #  list(shape = 1, scale = 4),
+  #  list(shape = 1, scale = 1))",  # scale is 1/rate
+  latent_shape_prior = 
+    "list(
+     list(a = 900, b = 1/0.002),
+     list(a = 1000, b = 1/0.005))",
+  latent_scale_prior =
+    "list(
+     list(mu = 0, sigma = 0.01),
+     list(mu = 0, sigma = 0.05))"
+)
 
+# convert to list
 latent_params_true <- eval(parse(text = data$latent_params_true))
+latent_shape_prior <- eval(parse(text = data$latent_shape_prior))
+latent_scale_prior <- eval(parse(text = data$latent_scale_prior))
 
 prior_cure_hier <- 
   list(mu_alpha = rep(data$mu_cf_prior, 2),
@@ -114,7 +130,7 @@ prior_cure_hier <-
 # duplicate for each treatment
 total_sigma <- sqrt(data$sigma_cf_prior^2 + data$mu_sd_cf_prior^2 + data$sigma_sd_cf_prior^2)
 
-# # check apprximately equivalent to hierarchical
+# # check approximately equivalent to hierarchical
 # rnorm(n = n, mean = mu, sd = sd) |>
 #   density() |> plot()
 # rnorm(n = n, mean = -1, sd = total_sigma) |> 
@@ -132,15 +148,19 @@ prior_cure_sep <-
 names(prior_cure_sep) <-
   paste0(names(prior_cure_sep), "_", rep(1:data$n_endpoints, each = 2))
 
+##TODO: move this to inside bmcm_stan()
 # prior parameters for each latent curve
-# duplicate for each end point
+# for each end point
+# recycle is length of parameters < n_endpoints
 prior_latent_list <- 
-  rep(list(a_shape = data$a_shape_latent_prior,
-           b_shape = data$b_shape_latent_prior,
-           mu_S = as.array(data$mu_S_prior),
-           sigma_S = as.array(data$sigma_S_prior)), data$n_endpoints)
+  c(list_flatten(rep(latent_shape_prior, length.out = data$n_endpoints)),
+    list_flatten(rep(latent_scale_prior, length.out = data$n_endpoints)))
+
 names(prior_latent_list) <-
-  paste0(names(prior_latent_list), "_", rep(1:data$n_endpoints, each = 4))
+  paste0(names(prior_latent_list), rep(c("_shape", "_S"), each = 2*data$n_endpoints))
+
+names(prior_latent_list) <-
+  paste0(names(prior_latent_list), "_", rep(1:data$n_endpoints, each = 2))
 
 sim_params <-
   list(
