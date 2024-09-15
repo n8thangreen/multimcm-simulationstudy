@@ -10,8 +10,8 @@ library(glue)
 library(ggplot2)
 
 
-###########
-# simulate 
+############
+# functions 
 
 invlogit <- function(x) {
   exp(x) / (1 + exp(x))
@@ -31,7 +31,9 @@ truncated_cauchy <- function(n, location, scale, a) {
   samples
 }
 
+################
 # cure fraction
+
 ## true
 invlogit(rnorm(1000, -1, 0.1)) |> 
   density() |> plot()
@@ -60,36 +62,53 @@ rnorm(n = n, mean = mu, sd = sd) |>
   density() |>
   plot(xlim = c(0, 1))
 
+#########################
 # latent survival curves
+
 n <- 10000
 # shape <- rgamma(n, shape = 3, scale = 2)   # vague
 # scale <- rlnorm(n, meanlog = 1, sdlog = 0.6)
 
-shape <- rgamma(n, shape = 1000, scale = 0.001)   # very informative
-scale <- rlnorm(n, meanlog = 0, sdlog = 0.01)
+# very informative
+shape <- rgamma(n, shape = 1000, scale = 0.001)
+scale1 <- rlnorm(n, meanlog = 0, sdlog = 0.01)         # scale = 1
+scale4 <- rlnorm(n, meanlog = 1.387, sdlog = 0.002)    # scale = 4
+log_scale4 <- rnorm(n, mean = 1.387, sd = 0.002)
+
+exp_scale4 <- exp(log_scale4)
 
 density(shape) |> plot()
-density(scale) |> plot()
+density(scale1) |> plot()
+density(scale4) |> plot()
+density(exp_scale4) |> plot()
 
 plot(NULL, ylim = c(0,1), xlim = c(0,5))
 for (i in 1:100) {
-  pweibull(q = seq(0,5,0.1), shape = shape[i], scale = scale[i], lower.tail = FALSE) |> 
+  pweibull(q = seq(0, 5, 0.1), shape = shape[i], scale = scale1[i], lower.tail = FALSE) |> 
+    lines(x = seq(0, 5, 0.1), col = "grey")
+}
+# true survival curve
+pweibull(q = seq(0, 5, 0.1), shape = 1, scale = 1, lower.tail = FALSE) |> 
+  lines(x = seq(0, 5, 0.1), col = "red")
+
+plot(NULL, ylim = c(0,1), xlim = c(0,5))
+for (i in 1:100) {
+  pweibull(q = seq(0,5,0.1), shape = shape[i], scale = scale4[i], lower.tail = FALSE) |> 
     lines(x = seq(0,5,0.1), col = "grey")
 }
+# true survival curve
+pweibull(q = seq(0, 5, 0.1), shape = 1, scale = 4, lower.tail = FALSE) |> 
+  lines(x = seq(0, 5, 0.1), col = "red")
 
-# true survival curves
-pweibull(q = seq(0,5,0.1), shape = 1, scale = 4, lower.tail = FALSE) |> 
-  plot(x = seq(0,5,0.1), col = "red", xlim = c(0,5), ylim = c(0, 1), type = "l")
-pweibull(q = seq(0,5,0.1), shape = 1, scale = 1, lower.tail = FALSE) |> 
-  lines(x = seq(0,5,0.1))
 
-#############
+###########
 # analysis
+###########
 
 # scenario_data
 data <- data.frame(
-  nsample = 5,
-  n_endpoints = 3,
+  nsample = 10,
+  n_endpoints = 10,
   t_cutpoint = 5,
   mu_cf_prior = -1,
   sigma_cf_prior = 0.7,
@@ -101,18 +120,17 @@ data <- data.frame(
   family_latent_model = "weibull",
   prop_censoring = 0,
   latent_params_true =
-    "list(list(shape = 1, scale = 1))",
-  # "list(
-  #  list(shape = 1, scale = 4),
-  #  list(shape = 1, scale = 1))",  # scale is 1/rate
+    "list(
+     list(shape = 1, scale = 4),
+     list(shape = 1, scale = 1))",  # scale is 1/rate
   latent_shape_prior = 
     "list(
-     list(a = 900, b = 1/0.002),
-     list(a = 1000, b = 1/0.005))",
+     list(a = 1000, b = 1/0.001),
+     list(a = 1000, b = 1/0.001))",
   latent_scale_prior =
     "list(
-     list(mu = 0, sigma = 0.01),
-     list(mu = 0, sigma = 0.05))"
+     list(mu = 1.387, sigma = 0.002),
+     list(mu = 0, sigma = 0.01))"
 )
 
 # convert to list
@@ -148,17 +166,24 @@ prior_cure_sep <-
 names(prior_cure_sep) <-
   paste0(names(prior_cure_sep), "_", rep(1:data$n_endpoints, each = 2))
 
+# need to convert to array for stan
+latent_scale_prior <- map(latent_scale_prior, ~ map(.x, as.array))
+
 ##TODO: move this to inside bmcm_stan()
 # prior parameters for each latent curve
 # for each end point
 # recycle is length of parameters < n_endpoints
+
 prior_latent_list <- 
   c(list_flatten(rep(latent_shape_prior, length.out = data$n_endpoints)),
     list_flatten(rep(latent_scale_prior, length.out = data$n_endpoints)))
 
+
+# parameter name
 names(prior_latent_list) <-
   paste0(names(prior_latent_list), rep(c("_shape", "_S"), each = 2*data$n_endpoints))
 
+# endpoint index
 names(prior_latent_list) <-
   paste0(names(prior_latent_list), "_", rep(1:data$n_endpoints, each = 2))
 
