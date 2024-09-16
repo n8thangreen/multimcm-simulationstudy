@@ -42,11 +42,11 @@ invlogit(rnorm(1000, -1, 0.1)) |>
 n <- 10000
 
 # weakly informative
-mu <- rnorm(n, mean = -1, sd = 0.7)  #sd = 0.1
+# mu <- rnorm(n, mean = -1, sd = 0.7)
 # sd <- truncated_cauchy(n, location = 0.15, scale = 0.5, 0)  # between-group
 
 # # very informative
-# mu <- rnorm(n, mean = -1, sd = 0.01)
+mu <- rnorm(n, mean = -1, sd = 0.01)
 sd <- truncated_cauchy(n, location = 0.05, scale = 0.05, 0)
 
 mu_cf <- invlogit(mu)     # global cure fraction
@@ -54,13 +54,15 @@ sd <- sd[sd < 10]
 
 density(mu) |> plot()
 density(mu_cf) |> plot()
-density(sd) |> plot()
+density(sd) |> plot(xlim = c(0,1))
+abline(v = median(sd), col = "red")
 
 # group-level cure fraction
 rnorm(n = n, mean = mu, sd = sd) |>
   invlogit() |> 
   density() |>
-  plot(xlim = c(0, 1))
+  plot(lty = 2, col = "red", xlim = c(0, 0.6))
+density(mu_cf) |> lines()
 
 #########################
 # latent survival curves
@@ -74,7 +76,6 @@ shape <- rgamma(n, shape = 1000, scale = 0.001)
 scale1 <- rlnorm(n, meanlog = 0, sdlog = 0.01)         # scale = 1
 scale4 <- rlnorm(n, meanlog = 1.387, sdlog = 0.002)    # scale = 4
 log_scale4 <- rnorm(n, mean = 1.387, sd = 0.002)
-
 exp_scale4 <- exp(log_scale4)
 
 density(shape) |> plot()
@@ -330,7 +331,11 @@ ggplot(data = stan_out_hier, aes(x = sd_cf.1.)) +
 # plot by target statistic
 plot_list <- plot_list[sort(cf_names)]
 
-do.call(gridExtra::grid.arrange, c(plot_list[1:10], nrow = 3))
+x <- do.call(gridExtra::grid.arrange, c(plot_list[1:data$n_endpoints], nrow = 3))
+ggsave(plot = x, filename = glue::glue("plots/cure_fraction_posterior_ne{data$n_endpoints}.png"),
+       width = 10, height = 10, bg = "white", units = "in", dpi = 300)
+
+
 do.call(gridExtra::grid.arrange, c(plot_list[11:20], nrow = 3))
 do.call(gridExtra::grid.arrange, c(plot_list[21:30], nrow = 3))
 
