@@ -112,8 +112,9 @@ data <- data.frame(
   n_endpoints = 10,
   t_cutpoint = 5,
   mu_cf_prior = -1,
+  # sigma_cf_prior = 0.01,   # very informative
   sigma_cf_prior = 0.7,
-  mu_sd_cf_prior = 0.05,
+  mu_sd_cf_prior = 0.05,     # very informative
   sigma_sd_cf_prior = 0.05,
   cf_true = -1,
   sigma_true = 0.1,
@@ -296,23 +297,27 @@ plot_list <- list()
 
 for (i in cf_names) {
   # combine the data into a single data frame
-  df <- data.frame(
-    value = c(stan_out_hier[, i], stan_out_sep[, i]),
-    group = factor(rep(c("hier", "sep"), each = 500))
-  )
-  
+  df <-
+    data.frame(
+      value = stan_out_hier[, i],
+      group = "hier") |> 
+    rbind(data.frame(
+      value = stan_out_sep[, i],
+      group = "sep")) |> 
+    mutate(group = factor(group, levels = c("hier", "sep")))
+
   parts <- strsplit(i, "\\.|_")[[1]]
   
   plot_list[[i]] <- 
     ggplot(df, aes(x = value, fill = group)) +
     geom_histogram(aes(y = ..density..), position = "identity", alpha = 0.5, bins = 30) +
-    geom_density(alpha = 0.7) +
+    # geom_density(alpha = 0.3) +
     labs(title = i, x = "Value", y = "Density") +
     geom_vline(xintercept = stan_out_hier_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1, col = "red") +
     geom_vline(xintercept = stan_out_sep_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1) +
     theme_minimal() +
     # cure fraction priors
-    geom_density(data = cf_data, aes(x = cf_sep), alpha = 0.7, inherit.aes = FALSE, col = "green")
+    geom_density(data = cf_data, aes(x = cf_sep), alpha = 0.3, inherit.aes = FALSE, col = "black", linewidth = 1.1)
 }
 
 do.call(gridExtra::grid.arrange, c(plot_list, nrow = 3, ncol = data$n_endpoints))
