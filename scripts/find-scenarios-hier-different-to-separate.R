@@ -43,11 +43,12 @@ n <- 10000
 
 # weakly informative
 # mu <- rnorm(n, mean = -1, sd = 0.7)
-# sd <- truncated_cauchy(n, location = 0.15, scale = 0.5, 0)  # between-group
+mu <- rnorm(n, mean = 0, sd = 0.7)
+sd <- truncated_cauchy(n, location = 0.05, scale = 0.1, 0)  # between-group
 
 # # very informative
-mu <- rnorm(n, mean = -1, sd = 0.01)
-sd <- truncated_cauchy(n, location = 0.05, scale = 0.05, 0)
+# mu <- rnorm(n, mean = -1, sd = 0.01)
+# sd <- truncated_cauchy(n, location = 0.05, scale = 0.05, 0)
 
 mu_cf <- invlogit(mu)     # global cure fraction
 sd <- sd[sd < 10]
@@ -61,27 +62,30 @@ abline(v = median(sd), col = "red")
 rnorm(n = n, mean = mu, sd = sd) |>
   invlogit() |> 
   density() |>
-  plot(lty = 2, col = "red", xlim = c(0, 0.6))
+  plot(lty = 2, col = "red") #, xlim = c(0, 0.6))
 density(mu_cf) |> lines()
 
 #########################
 # latent survival curves
 
 n <- 10000
-# shape <- rgamma(n, shape = 3, scale = 2)   # vague
-# scale <- rlnorm(n, meanlog = 1, sdlog = 0.6)
+
+# less informative
+shape <- rgamma(n, shape = 10, scale = 0.1)
+scale1 <- rlnorm(n, meanlog = 0, sdlog = 0.1)
+scale4 <- rlnorm(n, meanlog = 1.4, sdlog = 0.02)
 
 # very informative
-shape <- rgamma(n, shape = 1000, scale = 0.001)
-scale1 <- rlnorm(n, meanlog = 0, sdlog = 0.01)         # scale = 1
-scale4 <- rlnorm(n, meanlog = 1.387, sdlog = 0.002)    # scale = 4
-log_scale4 <- rnorm(n, mean = 1.387, sd = 0.002)
-exp_scale4 <- exp(log_scale4)
+# shape <- rgamma(n, shape = 1000, scale = 0.001)
+# scale1 <- rlnorm(n, meanlog = 0, sdlog = 0.01)         # scale = 1
+# scale4 <- rlnorm(n, meanlog = 1.387, sdlog = 0.002)    # scale = 4
+# log_scale4 <- rnorm(n, mean = 1.387, sd = 0.002)
+# exp_scale4 <- exp(log_scale4)
 
 density(shape) |> plot()
 density(scale1) |> plot()
 density(scale4) |> plot()
-density(exp_scale4) |> plot()
+# density(exp_scale4) |> plot()
 
 plot(NULL, ylim = c(0,1), xlim = c(0,5))
 for (i in 1:100) {
@@ -108,14 +112,16 @@ pweibull(q = seq(0, 5, 0.1), shape = 1, scale = 4, lower.tail = FALSE) |>
 
 # scenario_data
 data <- data.frame(
-  nsample = 10,
+  nsample = 100,
   n_endpoints = 10,
   t_cutpoint = 5,
-  mu_cf_prior = -1,
-  # sigma_cf_prior = 0.01,   # very informative
-  sigma_cf_prior = 0.7,
+  mu_cf_prior = 0,
+  # mu_cf_prior = -1,        # true value
+  sigma_cf_prior = 0.01,   # very informative
+  # sigma_cf_prior = 0.7,
   mu_sd_cf_prior = 0.05,     # very informative
-  sigma_sd_cf_prior = 0.05,
+  # sigma_sd_cf_prior = 0.05,
+  sigma_sd_cf_prior = 0.1,   # weaker
   cf_true = -1,
   sigma_true = 0.1,
   family_latent_true = "weibull",
@@ -127,12 +133,16 @@ data <- data.frame(
      list(shape = 1, scale = 1))",  # scale is 1/rate
   latent_shape_prior = 
     "list(
-     list(a = 1000, b = 1/0.001),
-     list(a = 1000, b = 1/0.001))",
+     list(a = 1000, b = 1/0.01),
+     list(a = 1000, b = 1/0.01))",
+     # list(a = 1000, b = 1/0.001),   # very informative
+     # list(a = 1000, b = 1/0.001))",
   latent_scale_prior =
     "list(
-     list(mu = 1.387, sigma = 0.002),
-     list(mu = 0, sigma = 0.01))"
+     list(mu = 1.4, sigma = 0.02),
+     list(mu = 0, sigma = 0.1))"
+     # list(mu = 1.387, sigma = 0.002),  # very informative
+     # list(mu = 0, sigma = 0.01))"
 )
 
 # convert to list
@@ -317,7 +327,8 @@ for (i in cf_names) {
     geom_vline(xintercept = stan_out_sep_true[parts[2], parts[1]], linetype = "dashed", linewidth = 1) +
     theme_minimal() +
     # cure fraction priors
-    geom_density(data = cf_data, aes(x = cf_sep), alpha = 0.3, inherit.aes = FALSE, col = "black", linewidth = 1.1)
+    geom_density(data = cf_data, aes(x = cf_sep), alpha = 0.3, inherit.aes = FALSE, col = "black", linewidth = 1.1) +
+    xlim(0, 0.75)
 }
 
 do.call(gridExtra::grid.arrange, c(plot_list, nrow = 3, ncol = data$n_endpoints))
