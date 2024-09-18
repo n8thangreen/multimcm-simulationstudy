@@ -15,7 +15,31 @@ scenario_data <- read.csv(here::here("raw-data/scenarios.csv")) |> as_tibble()
 
 i <- 1
 data <- scenario_data[i, ]
+
 latent_params_true <- eval(parse(text = data$latent_params_true))
+latent_shape_prior <- eval(parse(text = data$latent_shape_prior))
+latent_scale_prior <- eval(parse(text = data$latent_scale_prior))
+
+# need to convert to array for stan
+latent_scale_prior <- map(latent_scale_prior, ~ map(.x, as.array))
+
+prior_latent_list <- 
+  c(list_flatten(rep(latent_shape_prior, length.out = data$n_endpoints)),
+    list_flatten(rep(latent_scale_prior, length.out = data$n_endpoints)))
+
+# parameter name
+names(prior_latent_list) <-
+  paste0(names(prior_latent_list), rep(c("_shape", "_S"), each = 2*data$n_endpoints))
+# endpoint index
+names(prior_latent_list) <-
+  paste0(names(prior_latent_list), "_", rep(1:data$n_endpoints, each = 2))
+
+prior_cure_list <-
+  list(mu_alpha = rep(data$mu_cf_prior, 2),
+       sigma_alpha = rep(data$sigma_cf_prior, 2),
+       mu_sd_cf = rep(data$mu_sd_cf_prior, 2),
+       sigma_sd_cf = rep(data$sigma_sd_cf_prior, 2))
+
 n_sim <- 2
 
 sim_params <-
@@ -36,12 +60,8 @@ bmcm_params <-
     formula = "Surv(time=times, event=status) ~ 1",
     cureformula = "~ tx + (1 | endpoint)",
     family_latent = data$family_latent_model,
-    # duplicate for each treatment
-    prior_cure =   
-      list(mu_alpha = rep(data$mu_cf_prior, 2),
-           sigma_alpha = rep(data$sigma_cf_prior, 2),
-           mu_sd_cf = rep(data$mu_sd_cf_prior, 2),
-           sigma_sd_cf = rep(data$sigma_sd_cf_prior, 2)),
+    prior_cure = prior_cure_list,
+    prior_latent = prior_latent_list,
     centre_coefs = TRUE,
     bg_model = "bg_fixed",
     bg_varname = "rate",
@@ -70,10 +90,12 @@ bmcm_params$precompiled_model_path <- stan_model$exe_file()
 
 # run for single scenario
 
-run_scenario(1, sim_params, bmcm_params)
+run_scenario(1, sim_params, bmcm_params,
+             iter_warmup = 200,
+             iter_sampling = 1000,
+             save_warmup = FALSE,
+             thin = 1) #, seed = 1234)
 
 lapply(1:n_sim, \(x) run_scenario(x, sim_params, bmcm_params))
-
-
 
 
