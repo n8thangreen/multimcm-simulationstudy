@@ -73,6 +73,28 @@ if (exists("SCENARIO_ID")) i <- SCENARIO_ID
 
 data <- scenario_data[i, ]
 latent_params_true <- eval(parse(text = data$latent_params_true))
+latent_shape_prior <- eval(parse(text = data$latent_shape_prior))
+latent_scale_prior <- eval(parse(text = data$latent_scale_prior))
+
+# need to convert to array for stan
+latent_scale_prior <- map(latent_scale_prior, ~ map(.x, as.array))
+
+prior_latent_list <- 
+  c(list_flatten(rep(latent_shape_prior, length.out = data$n_endpoints)),
+    list_flatten(rep(latent_scale_prior, length.out = data$n_endpoints)))
+
+# parameter name
+names(prior_latent_list) <-
+  paste0(names(prior_latent_list), rep(c("_shape", "_S"), each = 2*data$n_endpoints))
+# endpoint index
+names(prior_latent_list) <-
+  paste0(names(prior_latent_list), "_", rep(1:data$n_endpoints, each = 2))
+
+prior_cure_list <-
+  list(mu_alpha = rep(data$mu_cf_prior, 2),
+       sigma_alpha = rep(data$sigma_cf_prior, 2),
+       mu_sd_cf = rep(data$mu_sd_cf_prior, 2),
+       sigma_sd_cf = rep(data$sigma_sd_cf_prior, 2))
 
 # number of parallel runs
 #n_sim <- 2
@@ -95,12 +117,8 @@ bmcm_params <-
     formula = "Surv(time=times, event=status) ~ 1",
     cureformula = "~ tx + (1 | endpoint)",
     family_latent = data$family_latent_model,
-    # duplicate for each treatment
-    prior_cure =   
-      list(mu_alpha = rep(data$mu_cf_prior, 2),
-           sigma_alpha = rep(data$sigma_cf_prior, 2),
-           mu_sd_cf = rep(data$mu_sd_cf_prior, 2),
-           sigma_sd_cf = rep(data$sigma_sd_cf_prior, 2)),
+    prior_cure = prior_cure_list,
+    prior_latent = prior_latent_list,
     centre_coefs = TRUE,
     bg_model = "bg_fixed",
     bg_varname = "rate",
@@ -145,12 +163,17 @@ while (!success && attempt < max_attempts) {
   paste("Attempt", attempt, "of", max_attempts, "\n")
   
   fit <- try(
-    run_scenario(task_id, sim_params, bmcm_params, dir = glue::glue("{output_dir}/"))
+    run_scenario(task_id, sim_params, bmcm_params, dir = glue::glue("{output_dir}/"),
+                 iter_warmup = 200,
+                 iter_sampling = 1000,
+                 save_warmup = FALSE,
+                 thin = 1)
   )
   
   # check model ran successfully
   if (inherits(fit, "CmdStanMCMC")) success <- TRUE
 }
+
 
 # parallel over multiple cores
 #

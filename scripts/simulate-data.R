@@ -96,6 +96,7 @@ for (i in 1:n_scenarios) {
 
 ########
 # plots
+########
 
 ## deterministic cure fraction
 
