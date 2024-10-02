@@ -4,4 +4,6 @@
 .Ruserdata
 data/stan_out*
 output_data/cluster
-stan/*.exe
+output_data/hierarchical
+output_data/separate
+stan/**/*.exe
