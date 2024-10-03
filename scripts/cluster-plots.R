@@ -23,8 +23,8 @@ for (model_type in c("separate", "hierarchical")) {
 # target <- "median"
 target <- "cf"
 
-endp <- 1
-# endp <- 2
+tx <- 1
+# tx <- 2
 
 # extract target data
 hist_dat <- list()
@@ -32,7 +32,7 @@ for (i in names(summary_list)) {
   hist_dat[[i]] <- 
     summary_list[[i]] |> 
     map(target) |> 
-    map(~ .x[[endp]])  #
+    map(~ .x[[tx]])  # filter by treatment
 }
 
 n_scenarios <- length(hist_dat[[1]])
@@ -45,7 +45,7 @@ x_max <- max(map_dbl(hist_dat$separate, ~ max(.x$theta_true)),
 plot_list <- list()
 
 for (i in seq_len(n_scenarios)) {
-  # combine the data into a single data frame
+  # combine model data into a single data frame
   theta_hat_sep <- hist_dat$separate[[i]]$theta_hat
   theta_hat_hier <- hist_dat$hierarchical[[i]]$theta_hat
   
@@ -62,7 +62,7 @@ for (i in seq_len(n_scenarios)) {
     df |> 
     ggplot(aes(x = value, fill = group)) +
     geom_histogram(aes(y = ..density..), position = "identity", alpha = 0.5, bins = 30) +
-    #
+    # mean true values
     # geom_vline(xintercept = mean(hist_dat$separate[[i]]$theta_true), color = "blue") +
     # geom_vline(xintercept = mean(hist_dat$hierarchical[[i]]$theta_true), color = "red") +
     ggtitle(glue::glue("Scenario {i}")) +
