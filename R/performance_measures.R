@@ -146,8 +146,9 @@ performance_measures_cluster <- function(stan_out_list,
   res
 }
 
-#' @param endpoint_id
-#' @param append Logical
+#' @param par_nm Parameter name e.g. cf or rmst
+#' @param endpoint_id Integer
+#' @param append Logical. Should the endpoint number be included.
 #' 
 samples_summary_stats <- function(stan_out_list,
                                   par_nm,
