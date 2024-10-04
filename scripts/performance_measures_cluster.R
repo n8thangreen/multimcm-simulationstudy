@@ -23,6 +23,7 @@ library(dplyr)
 library(ggplot2)
 
 
+# input values
 scenario_data <-
   read.csv(here::here("raw-data/scenarios.csv")) |>
   as_tibble() 
@@ -33,11 +34,12 @@ target_names <- c("rmst", "median", "cf")
 pm <- list()
 summary_dat <- list()
 
-# select
-model_type <- "separate"
-# model_type <- "hierarchical"
+## select
+# model_type <- "separate"
+model_type <- "hierarchical"
 
-# scenarios
+# for each scenario get sample summary statistics
+# and performance measures
 for (i in 1:n_scenario) {
   print(i)
   
@@ -96,6 +98,7 @@ save(summary_dat, file = glue::glue("data/summary_data_cluster_{model_type}.RDat
 
 ########
 # plots
+########
 
 load(glue::glue("data/performance_measures_cluster_{model_type}.RData"))
 load(glue::glue("data/summary_data_cluster_{model_type}.RData"))
@@ -103,8 +106,8 @@ load(glue::glue("data/summary_data_cluster_{model_type}.RData"))
 ##########################
 # histograms of theta_hat
 
-# target <- "rmst"
-target <- "cf"
+target <- "rmst"
+# target <- "cf"
 # target <- "median"
 
 # endp <- 1
@@ -121,7 +124,7 @@ x_max <- max(map_dbl(hist_dat, ~ max(.x$theta_true)))
 plot_list <- map(
   seq_along(hist_dat), 
   ~ ggplot(hist_dat[[.x]], aes(x = theta_hat)) +
-    geom_histogram(bins = 20) +
+    geom_histogram(bins = 50) +
     geom_vline(xintercept = mean(hist_dat[[.x]]$theta_true), color = "red") +
     xlab(target) +
     ggtitle(glue::glue("Scenario {.x}")) +
@@ -137,9 +140,9 @@ ggsave(filename = glue::glue("plots/theta_hat_hist_{target}_endpoint{endp}_{mode
 #######################
 # zip plot of coverage
 
-# target <- "rmst"
+target <- "rmst"
 # target <- "cf"
-target <- "median"
+# target <- "median"
 
 endp <- 1
 # endp <- 2
@@ -162,12 +165,13 @@ xx <- map(zip_dat,
   arrange(desc(p_value_mean)) |> 
   mutate(order_mean = 1:n()))
 
+# zip_pop
 plot_list <- 
   map(xx,
       ~ggplot(.x) +
         geom_segment(aes(y = order, x = theta_hat_low, xend = theta_hat_upp, col = sig)) + 
         geom_point(aes(y=order, x=theta_true), color = "grey", size = 0.3, inherit.aes = F) +
-        geom_hline(yintercept = 950, size = 1.2, linetype = "dashed") +
+        geom_hline(yintercept = 950, linewidth = 1.2, linetype = "dashed") +
         theme_bw() +
         xlab(target) +
         theme(legend.position="none"))
@@ -177,6 +181,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 ggsave(filename = glue::glue("plots/zip_pop_{target}_endpoint{endp}_{model_type}.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
 
+# zip_pop_mean
 plot_list <- 
   map(xx,
       ~ggplot(.x) +
@@ -192,11 +197,11 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 ggsave(filename = glue::glue("plots/zip_pop_mean_{target}_endpoint{endp}_{model_type}.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
 
-################
+#################
 # lollipop plots
 
-# target <- "rmst"
-target <- "cf"
+target <- "rmst"
+# target <- "cf"
 # target <- "median"
 
 quo_measure <- quo(bias)
@@ -213,9 +218,11 @@ plot_dat <- pm |>
   mutate(endpoint = factor(endpoint))
 # arrange(val)
 
-label_data <- scenario_data |> 
-  mutate(label = glue::glue("{data_id}: e={n_endpoints} n={nsample} p={prop_censoring} s={sigma_true}")) |> 
-  rename(scenario = id) |> 
+label_data <-
+  scenario_data |> 
+  mutate(label = glue::glue("{data_id}: e={n_endpoints} n={nsample}")) |> 
+  # mutate(label = glue::glue("{data_id}: e={n_endpoints} n={nsample} p={prop_censoring} s={sigma_true}")) |> 
+  rename(scenario = data_id) |> 
   mutate(label = factor(label, levels = unique(label))) |> 
   select(label, scenario)
 
@@ -263,7 +270,7 @@ plot_long |>
 ggsave(filename = glue::glue("plots/lollipop_cf_priors_{target}_data_scenario_1_{model_type}.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
 
-###################
+####################
 # pair scatter plot
 ##TODO:
 # load(glue::glue("data/summary_data_cluster.RData"))
@@ -330,8 +337,8 @@ library(kableExtra)
 
 input_table <-
   scenario_data |> 
-  select(id, n_endpoints, nsample, prop_censoring, sigma_true) |>
-  filter(id %in% 1:16) |>
+  select(data_id, n_endpoints, nsample, prop_censoring, sigma_true) |>
+  # filter(data_id %in% 1:16) |>
   kable(format = "latex", booktabs = TRUE)
 
 output_table <-
@@ -343,4 +350,8 @@ output_table <-
 write.csv(rmst_tab, file = glue::glue("output_data/rmst_table_{model_type}.csv"), row.names = FALSE)
 write.csv(cf_tab, file = glue::glue("output_data/cf_table_{model_type}.csv"), row.names = FALSE)
 write.csv(median_tab, file = glue::glue("output_data/median_table_{model_type}.csv"), row.names = FALSE)
+
+##############################
+# example survival plots for a single run
+
 
