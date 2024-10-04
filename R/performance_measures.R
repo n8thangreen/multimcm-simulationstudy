@@ -146,18 +146,23 @@ performance_measures_cluster <- function(stan_out_list,
   res
 }
 
-#
+#' @param par_nm Parameter name e.g. cf or rmst
+#' @param endpoint_id Integer
+#' @param append Logical. Should the endpoint number be included.
+#' 
 samples_summary_stats <- function(stan_out_list,
                                   par_nm,
                                   true_vals = NA,
                                   endpoint_id,
                                   append = TRUE) {
+  #
   if (append) {
     par_nm_ <- paste0(par_nm, "_", endpoint_id)
   } else {
     par_nm_ <- par_nm
   }
   
+  #
   if (any(!is.na(true_vals))) {
     theta_true <- sapply(true_vals, \(x) x[endpoint_id, par_nm])
   } else {
@@ -172,6 +177,7 @@ samples_summary_stats <- function(stan_out_list,
   theta_hat_upp <- sapply(samples, quantile, probs = 0.975, na.rm = TRUE)
   
   # clean means
+  # winsoring extreme values
   which_keep <- !(theta_hat > 10 | is.infinite(theta_hat) | is.na(theta_hat))
   
   theta_hat <- theta_hat[which_keep]

@@ -35,8 +35,8 @@ pm <- list()
 summary_dat <- list()
 
 ## select
-# model_type <- "separate"
-model_type <- "hierarchical"
+model_type <- "separate"
+# model_type <- "hierarchical"
 
 # for each scenario get sample summary statistics
 # and performance measures
@@ -79,6 +79,8 @@ for (i in 1:n_scenario) {
   for (j in target_names) {
     
     summary_dat[[i]][[j]] <- 
+      ##TODO: why is this hard coded 1:3?
+      ##      should it be number of endpoints?
       lapply(1:3,
              \(x) samples_summary_stats(
                stan_out,
@@ -126,8 +128,8 @@ plot_list <- map(
   ~ ggplot(hist_dat[[.x]], aes(x = theta_hat)) +
     geom_histogram(bins = 50) +
     geom_vline(xintercept = mean(hist_dat[[.x]]$theta_true), color = "red") +
-    xlab(target) +
     ggtitle(glue::glue("Scenario {.x}")) +
+    xlab(target) +
     ylab("Frequency") +
     xlim(x_min, x_max) +
     theme_bw())
