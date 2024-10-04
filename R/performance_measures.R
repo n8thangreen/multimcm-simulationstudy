@@ -1,8 +1,12 @@
 
+#' Main performance measure calculations
+#' 
 #' @import posterior
 #' 
-performance_measures <- function(theta_hat, true_value,
-                                 theta_hat_low = NA, theta_hat_upp = NA) {
+performance_measures <- function(theta_hat,
+                                 true_value,
+                                 theta_hat_low = NA,
+                                 theta_hat_upp = NA) {
   # estimates
   bias <- mean(theta_hat - true_value, na.rm = TRUE)
   relative_bias <- mean((theta_hat - true_value)/true_value, na.rm = TRUE)
@@ -25,8 +29,11 @@ performance_measures <- function(theta_hat, true_value,
 
 #' @param theta.hat.low lower bound of interval estimate
 #' @param theta.hat.upp upper bound of interval estimate
+#' 
 calc_coverage <- function(true_value,
-                          theta_hat_low = NA, theta_hat_upp = NA) {
+                          theta_hat_low = NA,
+                          theta_hat_upp = NA) {
+  # early when no data return
   if (any(is.na(theta_hat_low))) return()
   
   nsim <- length(theta_hat_low)
@@ -69,8 +76,10 @@ bmcm_performance_measures <- function(fit, par_nm, true_vals, append = TRUE) {
 #' 
 #' @importFrom posterior merge_chains as_draws
 #' 
-bmcm_performance_measures_N <- function(stan_out_list, par_nm, true_vals, append = TRUE) {
-  
+bmcm_performance_measures_N <- function(stan_out_list,
+                                        par_nm,
+                                        true_vals,
+                                        append = TRUE) {
   res <- NULL
   n_endpoints <- length(true_vals)
   
@@ -90,6 +99,7 @@ bmcm_performance_measures_N <- function(stan_out_list, par_nm, true_vals, append
                         all_samples <- merge_chains(as_draws(stan_extract))[[1]]
                         all_samples[[par_nm_]]
                       })
+    
     theta_hat <- sapply(samples, mean)
     theta_hat_low <- sapply(samples, quantile, probs = 0.025, na.rm = TRUE)
     theta_hat_upp <- sapply(samples, quantile, probs = 0.975, na.rm = TRUE)
@@ -116,9 +126,9 @@ bmcm_performance_measures_N <- function(stan_out_list, par_nm, true_vals, append
 #' statistics for all endpoints for full probabilistic analysis
 #' using posterior samples obtain using cluster
 #' 
-#' @param stan_out_list 
-#' @param par_nm 
-#' @param true_vals 
+#' @param stan_out_list stan fit output
+#' @param par_nm Parameter name e.g. cf or rmst
+#' @param true_vals True values; list of dataframes
 #' @param append when there are multiple curves near to add a number after par_nm
 #'
 #' @importFrom posterior merge_chains as_draws
@@ -155,15 +165,16 @@ samples_summary_stats <- function(stan_out_list,
                                   true_vals = NA,
                                   endpoint_id,
                                   append = TRUE) {
-  #
+  # are there multiple curves
   if (append) {
     par_nm_ <- paste0(par_nm, "_", endpoint_id)
   } else {
     par_nm_ <- par_nm
   }
   
-  #
-  if (any(!is.na(true_vals))) {
+  true_vals_provided <- any(!is.na(true_vals))
+  
+  if (true_vals_provided) {
     theta_true <- sapply(true_vals, \(x) x[endpoint_id, par_nm])
   } else {
     theta_true <- NA

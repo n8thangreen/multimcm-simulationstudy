@@ -35,8 +35,8 @@ pm <- list()
 summary_dat <- list()
 
 ## select
-model_type <- "separate"
-# model_type <- "hierarchical"
+# model_type <- "separate"
+model_type <- "hierarchical"
 
 # for each scenario get sample summary statistics
 # and performance measures
@@ -45,11 +45,13 @@ for (i in 1:n_scenario) {
   
   data <- scenario_data[i, ]
   
-  cluster_data_dir <- glue::glue("output_data/cluster/output_folders/{model_type}/scenario_{i}/")
+  cluster_data_dir <-
+    glue::glue("output_data/cluster/output_folders/{model_type}/scenario_{i}/")
   
   # input data
   true_vals_filenames <- dir(path = cluster_data_dir,
-                             pattern = "^true_values", full.names = TRUE)
+                             pattern = "^true_values",
+                             full.names = TRUE)
   true_vals <- lapply(true_vals_filenames, \(x) read.csv(x))
   
   # stan output
@@ -66,12 +68,16 @@ for (i in 1:n_scenario) {
       
       # combine same column names  
       df_long <- x |> 
-        tidyr::pivot_longer(cols = -X, names_to = "variable", values_to = "value") |> 
+        tidyr::pivot_longer(cols = -X,
+                            names_to = "variable",
+                            values_to = "value") |> 
         arrange(variable) |> 
         group_by(variable) |>
         mutate(id = 1:n()) |> 
         reshape2::dcast(id ~ variable, value.var = "value")
     })
+  
+  nendpoints <- nrow(true_vals[[1]])
   
   pm[[i]] <- list()
   summary_dat[[i]] <- list()
@@ -79,16 +85,15 @@ for (i in 1:n_scenario) {
   for (j in target_names) {
     
     summary_dat[[i]][[j]] <- 
-      ##TODO: why is this hard coded 1:3?
-      ##      should it be number of endpoints?
-      lapply(1:3,
+      lapply(1:nendpoints,
              \(x) samples_summary_stats(
                stan_out,
                par_nm = j,
                true_vals,
                endpoint_id = x))
     
-    pm[[i]][[j]] <- performance_measures_cluster(stan_out, par_nm = j, true_vals)
+    pm[[i]][[j]] <-
+      performance_measures_cluster(stan_out, par_nm = j, true_vals)
   }
 }
 
@@ -142,8 +147,8 @@ ggsave(filename = glue::glue("plots/theta_hat_hist_{target}_endpoint{endp}_{mode
 #######################
 # zip plot of coverage
 
-target <- "rmst"
-# target <- "cf"
+# target <- "rmst"
+target <- "cf"
 # target <- "median"
 
 endp <- 1
@@ -178,7 +183,7 @@ plot_list <-
         xlab(target) +
         theme(legend.position="none"))
 
-patchwork::wrap_plots(plot_list, ncol = 4)
+patchwork::wrap_plots(plot_list, nrow = 4)
 
 ggsave(filename = glue::glue("plots/zip_pop_{target}_endpoint{endp}_{model_type}.png"),
        height = 20, width = 20, dpi = 640, units = "cm")
@@ -202,14 +207,14 @@ ggsave(filename = glue::glue("plots/zip_pop_mean_{target}_endpoint{endp}_{model_
 #################
 # lollipop plots
 
-target <- "rmst"
-# target <- "cf"
+# target <- "rmst"
+target <- "cf"
 # target <- "median"
 
-quo_measure <- quo(bias)
+# quo_measure <- quo(bias)
 # quo_measure <- quo(relative_bias)
 # quo_measure <- quo(coverage)
-# quo_measure <- quo(empirical_se)
+quo_measure <- quo(empirical_se)
 
 # extract target data and combine scenarios
 plot_dat <- pm |> 
@@ -239,7 +244,7 @@ plot_dat |>
   ggplot(aes(x = endpoint, y = !!quo_measure)) +
   geom_segment(aes(xend = endpoint, yend=0), color = "grey", linewidth = 2) +
   geom_point(size=4, color="black") +
-  facet_wrap(vars(label)) +
+  facet_wrap(vars(label), nrow = 4) +
   # facet_wrap(vars(scenario)) +  # without titles
   coord_flip() +
   theme_bw() +
