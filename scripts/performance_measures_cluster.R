@@ -35,8 +35,8 @@ pm <- list()
 summary_dat <- list()
 
 ## select
-# model_type <- "separate"
-model_type <- "hierarchical"
+model_type <- "separate"
+# model_type <- "hierarchical"
 
 # for each scenario get sample summary statistics
 # and performance measures
@@ -46,7 +46,7 @@ for (i in 1:n_scenario) {
   data <- scenario_data[i, ]
   
   cluster_data_dir <-
-    glue::glue("output_data/cluster/output_folders/{model_type}/scenario_{i}/")
+    glue::glue("output_data/cluster/mu 0.01/{model_type}/scenario_{i}/")
   
   # input data
   true_vals_filenames <- dir(path = cluster_data_dir,

@@ -43,12 +43,12 @@ n <- 10000
 
 # weakly informative
 # mu <- rnorm(n, mean = -1, sd = 0.7)
-mu <- rnorm(n, mean = 0, sd = 0.7)
-sd <- truncated_cauchy(n, location = 0.05, scale = 0.1, 0)  # between-group
+# mu <- rnorm(n, mean = 0, sd = 0.7)
+# sd <- truncated_cauchy(n, location = 0.05, scale = 0.1, 0)  # between-group
 
 # # very informative
-# mu <- rnorm(n, mean = -1, sd = 0.01)
-# sd <- truncated_cauchy(n, location = 0.05, scale = 0.05, 0)
+mu <- rnorm(n, mean = -1, sd = 0.01)
+sd <- truncated_cauchy(n, location = 0.05, scale = 0.05, 0)
 
 mu_cf <- invlogit(mu)     # global cure fraction
 sd <- sd[sd < 10]
@@ -63,7 +63,7 @@ rnorm(n = n, mean = mu, sd = sd) |>
   invlogit() |> 
   density() |>
   plot(lty = 2, col = "red") #, xlim = c(0, 0.6))
-density(mu_cf) |> lines()
+density(mu_cf) |> lines()  # global cure fraction
 
 #########################
 # latent survival curves

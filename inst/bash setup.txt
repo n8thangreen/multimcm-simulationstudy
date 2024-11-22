@@ -13,7 +13,7 @@ ssh sejjng1@myriad.rc.ucl.ac.uk
 #qsub bmcm_array_cluster_script.sh
 #qsub -v SCENARIO_ID=1 bmcm_array_cluster_script.sh
 
-for i in {1..32}; do
+for i in {1..16}; do
   qsub -v SCENARIO_ID=$i bmcm_array_cluster_script.sh
 done
 
