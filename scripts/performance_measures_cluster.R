@@ -279,6 +279,7 @@ ggsave(filename = glue::glue("plots/lollipop_cf_priors_{target}_data_scenario_1_
 
 ####################
 # pair scatter plot
+
 ##TODO:
 # load(glue::glue("data/summary_data_cluster.RData"))
 # summary_dat_hier <- summary_dat
@@ -286,77 +287,6 @@ ggsave(filename = glue::glue("plots/lollipop_cf_priors_{target}_data_scenario_1_
 # summary_dat_sep <- summary_dat
 
 
-
-#########
-# tables
-#########
-
-#' take average across curves
-#'
-scenario_mean_table <- function(data_list) {
-  
-  result <- data.frame(Scenario = character(),
-                       Coverage = numeric(),
-                       Bias = numeric(),
-                       RB = numeric(),
-                       EmpiricalSE = numeric(),
-                       stringsAsFactors = FALSE)
-  
-  for (i in seq_along(data_list)) {
-    temp_data <- data_list[[i]]
-    coverage <- mean(temp_data[, "coverage"])
-    abs_bias_mean <- mean(abs(temp_data[, "bias"]))
-    relative_bias <- mean(temp_data[, "relative_bias"])
-    empirical_se <- mean(temp_data[, "empirical_se"])
-    
-    result <- rbind(result,
-                    data.frame(Scenario = i,
-                               Coverage = coverage,
-                               Bias = abs_bias_mean,
-                               RB = relative_bias,
-                               EmpiricalSE = empirical_se))
-  }
-  
-  result
-}
-
-rmst_tab <- 
-  map(pm, "rmst") |> 
-  scenario_mean_table()
-
-cf_tab <- 
-  map(pm, "cf") |> 
-  scenario_mean_table()
-
-median_tab <- 
-  map(pm, "median") |> 
-  scenario_mean_table()
-
-combined_tab <- 
-  merge(rmst_tab, cf_tab, by = "Scenario") |> 
-  merge(median_tab, by = "Scenario") |> 
-  mutate(across(where(is.numeric), ~ round(., 2)))
-
-# xtable::xtable(combined_tab, digits = 3)
-
-
-library(kableExtra)
-
-input_table <-
-  scenario_data |> 
-  select(data_id, n_endpoints, nsample, prop_censoring, sigma_true) |>
-  # filter(data_id %in% 1:16) |>
-  kable(format = "latex", booktabs = TRUE)
-
-output_table <-
-  kable(combined_tab, format = "latex", booktabs = TRUE) |> 
-  add_header_above(c(" ", "RMST" = 4, "Cure Fraction" = 4, "Median" = 4)) 
-# kable_styling(latex_options = c("striped", "hold_position"))
-
-# save
-write.csv(rmst_tab, file = glue::glue("output_data/rmst_table_{model_type}.csv"), row.names = FALSE)
-write.csv(cf_tab, file = glue::glue("output_data/cf_table_{model_type}.csv"), row.names = FALSE)
-write.csv(median_tab, file = glue::glue("output_data/median_table_{model_type}.csv"), row.names = FALSE)
 
 ##############################
 # example survival plots for a single run
