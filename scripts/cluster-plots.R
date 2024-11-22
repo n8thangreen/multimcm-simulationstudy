@@ -19,9 +19,9 @@ for (model_type in c("separate", "hierarchical")) {
 # mean estimate
 ##########################
 
-# target <- "rmst"
+target <- "rmst"
 # target <- "median"
-target <- "cf"
+# target <- "cf"
 
 tx <- 1
 # tx <- 2
@@ -41,6 +41,7 @@ x_min <- min(map_dbl(hist_dat$separate, ~ min(.x$theta_true)),
              map_dbl(hist_dat$separate, ~ min(.x$theta_hat)),
              map_dbl(hist_dat$hierarchical, ~ min(.x$theta_true)),
              map_dbl(hist_dat$hierarchical, ~ min(.x$theta_hat)))
+
 x_max <- max(map_dbl(hist_dat$separate, ~ max(.x$theta_true)),
              map_dbl(hist_dat$separate, ~ max(.x$theta_hat)),
              map_dbl(hist_dat$hierarchical, ~ max(.x$theta_true)),
@@ -78,11 +79,21 @@ for (i in seq_len(n_scenarios)) {
     xlab(target) +
     ylab("Frequency") +
     xlim(x_min, x_max) +
-    theme_bw() +
-    theme(legend.position = "none")
+    theme_bw() #+
+    # theme(legend.position = "none")
 }
 
-patchwork::wrap_plots(plot_list, nrow = 4)
+# Keep legend for the first plot, remove from others
+plot_list <- lapply(seq_along(plot_list), function(i) {
+  if (i == 1) {
+    plot_list[[i]] # Keep the legend for the first plot
+  } else {
+    plot_list[[i]] + theme(legend.position = "none") # Remove legend
+  }
+})
+
+patchwork::wrap_plots(plot_list, nrow = 4) +
+  patchwork::plot_layout(guides = "collect")
 
 ggsave(filename = glue::glue("plots/theta_hat_hist_{target}.png"),
        height = 20, width = 35, dpi = 640, units = "cm")
@@ -91,13 +102,13 @@ ggsave(filename = glue::glue("plots/theta_hat_hist_{target}.png"),
 #################
 # lollipop plots
 
-# target <- "rmst"
-target <- "cf"
+target <- "rmst"
+# target <- "cf"
 # target <- "median"
 
-quo_measure <- quo(bias)
+# quo_measure <- quo(bias)
 # quo_measure <- quo(relative_bias)
-# quo_measure <- quo(coverage)
+quo_measure <- quo(coverage)
 # quo_measure <- quo(empirical_se)
 
 label_data <-
@@ -144,8 +155,8 @@ plot_dat |>
   coord_flip() +
   theme_minimal() +
   xlab("Endpoint ID") +
-  ylab(y_label) +
-  theme(legend.position = "none")
+  ylab(y_label) #+
+  # theme(legend.position = "none")
 
 ggsave(filename = glue::glue("plots/lollipop_{target}_{quo_name(quo_measure)}.png"),
        height = 20, width = 30, dpi = 640, units = "cm", bg = "white")
